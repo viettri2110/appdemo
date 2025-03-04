@@ -2,6 +2,7 @@ package com.example.appdemo.Activity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
@@ -10,16 +11,22 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.appdemo.Adapter.PopularListAdapter;
-import com.example.appdemo.Domain.PopularDomain;
+import com.example.appdemo.Helper.DatabaseHelper;
+import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private RecyclerView.Adapter adapterPopular;
+    private PopularListAdapter adapterPopular;
     private RecyclerView recyclerViewPopular;
     private CartManager cartManager;
+    private DatabaseHelper dbHelper;
+    private List<Product> productList;
+    private FloatingActionButton fabManageProducts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,11 +34,50 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        // Khởi tạo CartManager
+        dbHelper = new DatabaseHelper(this);
         cartManager = CartManager.getInstance(this);
 
+        initViews();
         initRecyclerView();
         initBottomNavigation();
+        setupListeners();
+    }
+
+    private void initViews() {
+        recyclerViewPopular = findViewById(R.id.view1);
+        fabManageProducts = findViewById(R.id.fabManageProducts);
+    }
+
+    private void setupListeners() {
+        fabManageProducts.setOnClickListener(v -> {
+            Intent intent = new Intent(MainActivity.this, ProductManagementActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshProductList();
+    }
+
+    private void initRecyclerView() {
+        productList = new ArrayList<>();
+        recyclerViewPopular.setLayoutManager(
+                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+        );
+        adapterPopular = new PopularListAdapter(productList);
+        recyclerViewPopular.setAdapter(adapterPopular);
+        refreshProductList();
+    }
+
+    private void refreshProductList() {
+        if (productList != null && adapterPopular != null) {
+            productList.clear();
+            productList.addAll(dbHelper.getAllProducts());
+            Log.d("MainActivity", "Loaded products: " + productList.toString());
+            adapterPopular.notifyDataSetChanged();
+        }
     }
 
     private void initBottomNavigation() {
@@ -43,71 +89,12 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(new Intent(MainActivity.this, ProfileActivity.class))
         );
 
-        homeBtn.setOnClickListener(view -> 
-            startActivity(new Intent(MainActivity.this, MainActivity.class))
+        homeBtn.setOnClickListener(view -> {
+            refreshProductList();
+        });
+
+        cartBtn.setOnClickListener(view ->
+                startActivity(new Intent(MainActivity.this, CartActivity.class))
         );
-        
-        cartBtn.setOnClickListener(view -> 
-            startActivity(new Intent(MainActivity.this, CartActivity.class))
-        );
-    }
-
-    private void initRecyclerView() {
-        ArrayList<PopularDomain> items = new ArrayList<>();
-        
-        items.add(new PopularDomain(
-            "M1",
-            "Discover the new MacBook Pro 13 featuring the\n" +
-            "powerful M2 chip. This cutting-edge laptop\n" +
-            "redefines performance and portability. With its \n" +
-            "Sleek design and advanced technology, the\n" +
-            "MacBook Pro 13 M2 chip is your ultimate\n" +
-            "companion for productivity, creativity, and\n" +
-            "entertainment. Experience seamless multitasking, \n" +
-            "stunning visuals on the Retina display, and\n" +
-            "enhanced security with Touch ID. Take your\n" +
-            "computing experience to the next level with the\n" +
-            "MacBook Pro 13 M2 chip",
-            "pic1",
-            25,
-            4,
-            400
-        ));
-
-        items.add(new PopularDomain(
-            "Ma2p",
-            "Discover the new MacBook Pro 13 featuring the\n" +
-            "powerful M2 chip. This cutting-edge laptop\n" +
-            "redefines performance and portability. With its \n" +
-            "Sleek design and advanced technology, the\n" +
-            "MacBook Pro 13 M2 chip is your ultimate\n" +
-            "companion for productivity, creativity, and\n" +
-            "entertainment. Experience seamless multitasking, \n" +
-            "stunning visuals on the Retina display, and\n" +
-            "enhanced security with Touch ID. Take your\n" +
-            "computing experience to the next level with the\n" +
-            "Ps-5",
-            "pic2",
-            10,
-            4.5,
-            500
-        ));
-
-        items.add(new PopularDomain(
-            "M43",
-            "D14",
-            "pic4",
-            13,
-            4.2,
-            800
-        ));
-
-        recyclerViewPopular = findViewById(R.id.view1);
-        recyclerViewPopular.setLayoutManager(
-            new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        );
-
-        adapterPopular = new PopularListAdapter(items);
-        recyclerViewPopular.setAdapter(adapterPopular);
     }
 }

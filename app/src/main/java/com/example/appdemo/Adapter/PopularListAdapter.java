@@ -2,6 +2,7 @@ package com.example.appdemo.Adapter;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,16 +15,17 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.resource.bitmap.GranularRoundedCorners;
 import com.example.appdemo.Activity.DetailActivity;
-import com.example.appdemo.Domain.PopularDomain;
+import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.util.List;
 
 public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.ViewHolder> {
-    ArrayList<PopularDomain> items;
-    Context context;
+    private List<Product> items;
+    private Context context;
 
-    public PopularListAdapter(ArrayList<PopularDomain> items) {
+    public PopularListAdapter(List<Product> items) {
         this.items = items;
     }
 
@@ -37,21 +39,33 @@ public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        PopularDomain item = items.get(position);
-        holder.titleTxt.setText(item.getTitle());
-        holder.feeTxt.setText("VND"+item.getPrice());
-        holder.ScoreTxt.setText(""+item.getScore());
+        Product item = items.get(position);
+        holder.titleTxt.setText(item.getName());
+        holder.feeTxt.setText(String.format("%.0f VND", item.getPrice()));
+        holder.ScoreTxt.setText("4.5"); // Default score for now
 
-        int drawableResourceId=holder.itemView.getResources().getIdentifier(item.getPicUrl(),"drawable",holder.itemView.getContext().getPackageName());
-
-        Glide.with(holder.itemView.getContext())
-                .load(drawableResourceId)
-                .transform(new GranularRoundedCorners(30,30,0,0))
-                .into(holder.pic);
+        // Load image from path or resource
+        Log.d("PopularListAdapter", "Loading image for product: " + item.getName() + " with imageUrl: " + item.getImageUrl());
+        if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
+            String imagePath = "file:///android_asset/products/" + item.getImageUrl();
+            Glide.with(context)
+                    .load(imagePath)
+                    .transform(new GranularRoundedCorners(30, 30, 0, 0))
+                    .placeholder(R.drawable.default_product_image)
+                    .error(R.drawable.default_product_image)
+                    .into(holder.pic);
+        } else {
+            holder.pic.setImageResource(R.drawable.default_product_image);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, DetailActivity.class);
-            intent.putExtra("object", item);
+            intent.putExtra("id", item.getId());
+            intent.putExtra("name", item.getName());
+            intent.putExtra("price", item.getPrice());
+            intent.putExtra("description", item.getDescription());
+            intent.putExtra("imageUrl", item.getImageUrl());
+            intent.putExtra("category", item.getCategory());
             context.startActivity(intent);
         });
     }
@@ -61,15 +75,16 @@ public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.
         return items.size();
     }
 
-    public class ViewHolder extends RecyclerView.ViewHolder{
-        TextView titleTxt,feeTxt,ScoreTxt;
+    public class ViewHolder extends RecyclerView.ViewHolder {
+        TextView titleTxt, feeTxt, ScoreTxt;
         ImageView pic;
+
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            titleTxt=itemView.findViewById(R.id.titleTxt);
-            feeTxt=itemView.findViewById(R.id.feeTxt);
-            ScoreTxt=itemView.findViewById(R.id.scoreTxt);
-            pic=itemView.findViewById(R.id.pic);
+            titleTxt = itemView.findViewById(R.id.titleTxt);
+            feeTxt = itemView.findViewById(R.id.feeTxt);
+            ScoreTxt = itemView.findViewById(R.id.scoreTxt);
+            pic = itemView.findViewById(R.id.pic);
         }
     }
 }

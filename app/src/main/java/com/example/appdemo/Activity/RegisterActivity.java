@@ -83,7 +83,7 @@ public class RegisterActivity extends AppCompatActivity {
                 progressDialog.dismiss();
                 if (result != -1) {
                     Toast.makeText(RegisterActivity.this, 
-                        "Đăng ký thành công", Toast.LENGTH_SHORT).show();
+                            "Đăng ký thành công", Toast.LENGTH_SHORT).show();
                     
                     Intent resultIntent = new Intent();
                     resultIntent.putExtra("email", email);
@@ -93,7 +93,7 @@ public class RegisterActivity extends AppCompatActivity {
                     finish();
                 } else {
                     Toast.makeText(RegisterActivity.this, 
-                        "Email đã tồn tại", Toast.LENGTH_SHORT).show();
+                            "Email đã tồn tại", Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();

@@ -37,6 +37,11 @@ public class MainActivity extends AppCompatActivity {
     private void initBottomNavigation() {
         LinearLayout homeBtn = findViewById(R.id.homeBtn);
         LinearLayout cartBtn = findViewById(R.id.cartBtn);
+        LinearLayout profileBtn = findViewById(R.id.profileBtn);
+
+        profileBtn.setOnClickListener(view ->
+                startActivity(new Intent(MainActivity.this, ProfileActivity.class))
+        );
 
         homeBtn.setOnClickListener(view -> 
             startActivity(new Intent(MainActivity.this, MainActivity.class))

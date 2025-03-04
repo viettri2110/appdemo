@@ -12,18 +12,23 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.appdemo.Adapter.PopularListAdapter;
 import com.example.appdemo.Domain.PopularDomain;
 import com.example.appdemo.R;
+import com.example.appdemo.Manager.CartManager;
 
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private RecyclerView.Adapter adapterPopular;
     private RecyclerView recyclerViewPopular;
+    private CartManager cartManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
+        // Khởi tạo CartManager
+        cartManager = CartManager.getInstance(this);
 
         initRecyclerView();
         initBottomNavigation();

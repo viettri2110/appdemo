@@ -17,6 +17,7 @@ import com.example.appdemo.Model.Product;
 import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.R;
 import com.example.appdemo.Activity.DetailActivity;
+import com.example.appdemo.Domain.PopularDomain;
 
 import java.util.List;
 import java.util.Locale;
@@ -24,10 +25,12 @@ import java.util.Locale;
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductViewHolder> {
     private List<Product> products;
     private Context context;
+    private CartManager cartManager;
 
     public ProductAdapter(Context context, List<Product> products) {
         this.context = context;
         this.products = products;
+        this.cartManager = CartManager.getInstance(context);
     }
 
     @NonNull
@@ -57,7 +60,17 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         });
         
         holder.btnAddToCart.setOnClickListener(v -> {
-            CartManager.getInstance().addToCart(product);
+            // Chuyển đổi Product thành PopularDomain
+            PopularDomain popularProduct = new PopularDomain(
+                product.getName(),
+                product.getDescription(),
+                product.getImageUrl(),
+                0,  // review count
+                0,  // score
+                product.getPrice()
+            );
+            
+            cartManager.addToCart(popularProduct);
             Toast.makeText(context, 
                 product.getName() + " added to cart", 
                 Toast.LENGTH_SHORT).show();

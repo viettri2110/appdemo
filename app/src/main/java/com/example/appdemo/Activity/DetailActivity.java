@@ -8,45 +8,47 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Domain.PopularDomain;
-import com.example.appdemo.Helper.ManagmentCart;
+import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.R;
 
+import java.util.Locale;
+
 public class DetailActivity extends AppCompatActivity {
+    private TextView titleTxt, priceTxt, descriptionTxt, numberOrderTxt;
+    private ImageView productImg, plusBtn, minusBtn;
     private Button addToCartBtn;
-    private TextView titleTxt, feeTxt, descriptionTxt, reviewTxt, scoreTxt;
-    private ImageView picItem, backBtn;
     private PopularDomain object;
     private int numberOrder = 1;
-    private ManagmentCart managementCart;
+    private CartManager cartManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
-        managementCart= new ManagmentCart(this);
+        cartManager = CartManager.getInstance(this);
 
         initView();
         getBundle();
+        setupListeners();
     }
 
     private void initView() {
-
-            addToCartBtn=findViewById(R.id.addToCartBtn);
-            feeTxt=findViewById(R.id.priceTxt);
-            titleTxt=findViewById(R.id.titleTxt);
-            descriptionTxt=findViewById(R.id.descriptionTxt);
-            picItem=findViewById(R.id.itemPic);
-            reviewTxt=findViewById(R.id.reviewTxt);
-            scoreTxt=findViewById(R.id.scoreTxt);
-            backBtn=findViewById(R.id.backBtn);
+        titleTxt = findViewById(R.id.titleTxt);
+        priceTxt = findViewById(R.id.priceTxt);
+        descriptionTxt = findViewById(R.id.descriptionTxt);
+        numberOrderTxt = findViewById(R.id.numberOrderTxt);
+        productImg = findViewById(R.id.productImg);
+        plusBtn = findViewById(R.id.plusBtn);
+        minusBtn = findViewById(R.id.minusBtn);
+        addToCartBtn = findViewById(R.id.addToCartBtn);
     }
-
 
     private void getBundle() {
         object = (PopularDomain) getIntent().getSerializableExtra("object");
@@ -59,25 +61,33 @@ public class DetailActivity extends AppCompatActivity {
 
         Glide.with(this)
                 .load(drawableResourceId)
-                .into(picItem);
+                .into(productImg);
 
         titleTxt.setText(object.getTitle());
-        feeTxt.setText("$" + object.getPrice());
+        priceTxt.setText("$" + object.getPrice());
         descriptionTxt.setText(object.getDescription());
-        reviewTxt.setText(object.getReview() + "");
-        scoreTxt.setText(object.getScore() + "");
-
-        addToCartBtn.setOnClickListener(view -> {
-            object.setNumberinCart(numberOrder);
-            managementCart.insertFood(object);
-        });
-        backBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(DetailActivity.this, MainActivity.class));
-            }
-        });
     }
 
+    private void setupListeners() {
+        plusBtn.setOnClickListener(v -> {
+            numberOrder++;
+            numberOrderTxt.setText(String.valueOf(numberOrder));
+        });
+
+        minusBtn.setOnClickListener(v -> {
+            if (numberOrder > 1) {
+                numberOrder--;
+                numberOrderTxt.setText(String.valueOf(numberOrder));
+            }
+        });
+
+        addToCartBtn.setOnClickListener(v -> {
+            object.setNumberinCart(numberOrder);
+            cartManager.addToCart(object);
+            Toast.makeText(this, "Added " + numberOrder + " items to cart", 
+                Toast.LENGTH_SHORT).show();
+            finish();
+        });
+    }
 }
 

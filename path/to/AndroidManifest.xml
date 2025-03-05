@@ -1,0 +1,6 @@
+<application
+    ... >
+    <!-- ... existing activities ... -->
+    <activity android:name=".Activity.ProfileActivity" />
+    <!-- ... existing activities ... -->
+</application> 

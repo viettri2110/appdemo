@@ -1,0 +1,10 @@
+<LinearLayout
+    ... >
+    <!-- ... existing views ... -->
+    <EditText
+        android:id="@+id/edtProductName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Product Name" />
+    <!-- ... existing views ... -->
+</LinearLayout> 

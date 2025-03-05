@@ -11,10 +11,11 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.appdemo.Adapter.PopularListAdapter;
-import com.example.appdemo.Helper.DatabaseHelper;
+import com.example.appdemo.Helper.ProductDatabaseHelper;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
+import com.example.appdemo.database.DatabaseHelper;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private PopularListAdapter adapterPopular;
     private RecyclerView recyclerViewPopular;
     private CartManager cartManager;
-    private DatabaseHelper dbHelper;
+    private ProductDatabaseHelper dbHelper;
     private List<Product> productList;
     private FloatingActionButton fabManageProducts;
 
@@ -34,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        dbHelper = new DatabaseHelper(this);
+        dbHelper = new ProductDatabaseHelper(this);
         cartManager = CartManager.getInstance(this);
 
         initViews();

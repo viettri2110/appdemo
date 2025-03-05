@@ -11,7 +11,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.appdemo.Database.DatabaseHelper;
+import com.example.appdemo.database.DatabaseHelper;
 import com.example.appdemo.R;
 
 public class LoginActivity extends AppCompatActivity {

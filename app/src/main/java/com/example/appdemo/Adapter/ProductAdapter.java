@@ -8,16 +8,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 
-import java.io.File;
 import java.util.List;
-import java.util.Locale;
 
 public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHolder> {
     private Context context;
@@ -32,7 +29,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(context)
-                .inflate(R.layout.item_product, parent, false);
+                .inflate(R.layout.viewholder_pop_list, parent, false);
         return new ViewHolder(view);
     }
 
@@ -40,13 +37,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Product product = products.get(position);
 
-        holder.txtName.setText(product.getName());
-        holder.txtPrice.setText(String.format(Locale.US, "$%.2f", product.getPrice()));
-        holder.txtDescription.setText(product.getDescription());
+        holder.titleTxt.setText(product.getName());
+        holder.feeTxt.setText(String.format("$%.2f", product.getPrice()));
+        holder.scoreTxt.setText("0");
 
         if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
             Glide.with(context)
-                    .load(new File(product.getImageUrl()))
+                    .load(product.getImageUrl())
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.placeholder_image)
                     .into(holder.imgProduct);
@@ -61,17 +58,15 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        CardView cardView;
         ImageView imgProduct;
-        TextView txtName, txtPrice, txtDescription;
+        TextView titleTxt, feeTxt, scoreTxt;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            cardView = itemView.findViewById(R.id.cardView);
-            imgProduct = itemView.findViewById(R.id.imgProduct);
-            txtName = itemView.findViewById(R.id.txtName);
-            txtPrice = itemView.findViewById(R.id.txtPrice);
-            txtDescription = itemView.findViewById(R.id.txtDescription);
+            imgProduct = itemView.findViewById(R.id.pic);
+            titleTxt = itemView.findViewById(R.id.titleTxt);
+            feeTxt = itemView.findViewById(R.id.feeTxt);
+            scoreTxt = itemView.findViewById(R.id.scoreTxt);
         }
     }
 } 

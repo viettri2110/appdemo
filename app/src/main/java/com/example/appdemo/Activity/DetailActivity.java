@@ -1,6 +1,5 @@
 package com.example.appdemo.Activity;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,18 +12,14 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.bumptech.glide.Glide;
-import com.example.appdemo.Domain.PopularDomain;
-import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
-
-import java.util.Locale;
+import com.example.appdemo.Manager.CartManager;
 
 public class DetailActivity extends AppCompatActivity {
     private TextView titleTxt, priceTxt, descriptionTxt, numberOrderTxt;
-    private ImageView productImg, plusBtn, minusBtn;
+    private ImageView productImg, plusBtn, minusBtn,backBtn;
     private Button addToCartBtn;
-    private PopularDomain object;
     private int numberOrder = 1;
     private CartManager cartManager;
 
@@ -41,13 +36,14 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void initView() {
+
         titleTxt = findViewById(R.id.titleTxt);
         priceTxt = findViewById(R.id.priceTxt);
         descriptionTxt = findViewById(R.id.descriptionTxt);
-
         productImg = findViewById(R.id.productImg);
-
-
+        numberOrderTxt = findViewById(R.id.numberOrderTxt);
+        plusBtn = findViewById(R.id.plusBtn);
+        minusBtn = findViewById(R.id.minusBtn);
         addToCartBtn = findViewById(R.id.addToCartBtn);
     }
 
@@ -84,14 +80,13 @@ public class DetailActivity extends AppCompatActivity {
                 numberOrderTxt.setText(String.valueOf(numberOrder));
             }
         });
+      //  backBtn.setOnClickListener(v -> finish());
 
-        addToCartBtn.setOnClickListener(v -> {
-            object.setNumberinCart(numberOrder);
-            cartManager.addToCart(object);
-            Toast.makeText(this, "Added " + numberOrder + " items to cart", 
-                Toast.LENGTH_SHORT).show();
-            finish();
-        });
+//      addToCartBtn.setOnClickListener(v -> {
+//            cartManager.addToCart(new Product(titleTxt.getText().toString(), priceTxt.getText().toString(), numberOrder));
+//           Toast.makeText(this, "Added " + numberOrder + " items to cart", Toast.LENGTH_SHORT).show();
+//            finish();
+//       });
     }
 }
 

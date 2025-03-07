@@ -1,6 +1,7 @@
 package com.example.appdemo.Adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
+import com.example.appdemo.Activity.DetailActivity;
 
 import java.util.List;
 
@@ -50,6 +52,13 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         } else {
             holder.imgProduct.setImageResource(R.drawable.placeholder_image);
         }
+
+        // Thêm sự kiện click cho item
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, DetailActivity.class);
+            intent.putExtra("product", product);
+            context.startActivity(intent);
+        });
     }
 
     @Override

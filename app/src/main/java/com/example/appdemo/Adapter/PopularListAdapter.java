@@ -47,24 +47,19 @@ public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.
         // Load image from path or resource
         Log.d("PopularListAdapter", "Loading image for product: " + item.getName() + " with imageUrl: " + item.getImageUrl());
         if (item.getImageUrl() != null && !item.getImageUrl().isEmpty()) {
-            String imagePath = "file:///android_asset/products/" + item.getImageUrl();
             Glide.with(context)
-                    .load(imagePath)
-                    .transform(new GranularRoundedCorners(30, 30, 0, 0))
-
+                    .load(item.getImageUrl())
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
                     .into(holder.pic);
         } else {
-            holder.pic.setImageResource(R.drawable.pic1);
+            holder.pic.setImageResource(R.drawable.placeholder_image);
         }
 
+        // Thiết lập sự kiện nhấp chuột
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, DetailActivity.class);
-            intent.putExtra("id", item.getId());
-            intent.putExtra("name", item.getName());
-            intent.putExtra("price", item.getPrice());
-            intent.putExtra("description", item.getDescription());
-            intent.putExtra("imageUrl", item.getImageUrl());
-            intent.putExtra("category", item.getCategory());
+            intent.putExtra("product", item); // Chuyển sản phẩm đến DetailActivity
             context.startActivity(intent);
         });
     }

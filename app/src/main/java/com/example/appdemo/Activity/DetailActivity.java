@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Domain.PopularDomain;
 import com.example.appdemo.Manager.CartManager;
+import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 
 import java.util.Locale;
@@ -43,29 +44,32 @@ public class DetailActivity extends AppCompatActivity {
         titleTxt = findViewById(R.id.titleTxt);
         priceTxt = findViewById(R.id.priceTxt);
         descriptionTxt = findViewById(R.id.descriptionTxt);
-        numberOrderTxt = findViewById(R.id.numberOrderTxt);
+
         productImg = findViewById(R.id.productImg);
-        plusBtn = findViewById(R.id.plusBtn);
-        minusBtn = findViewById(R.id.minusBtn);
+
+
         addToCartBtn = findViewById(R.id.addToCartBtn);
     }
 
     private void getBundle() {
-        object = (PopularDomain) getIntent().getSerializableExtra("object");
-        if (object == null) {
-            Log.e("DetailActivity", "PopularDomain is null");
-            finish(); // Close activity if object is null
-            return;
+        Intent intent = getIntent();
+        Product product = (Product) intent.getSerializableExtra("product"); // Nhận sản phẩm từ Intent
+
+        if (product != null) {
+            titleTxt.setText(product.getName());
+            priceTxt.setText(String.format("$%.2f", product.getPrice()));
+            descriptionTxt.setText(product.getDescription());
+
+            // Tải hình ảnh sản phẩm
+            Glide.with(this)
+                    .load(product.getImageUrl())
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .into(productImg);
+        } else {
+            Log.e("DetailActivity", "Product is null");
+            finish(); // Đóng activity nếu sản phẩm null
         }
-        int drawableResourceId = this.getResources().getIdentifier(object.getPicUrl(), "drawable", this.getPackageName());
-
-        Glide.with(this)
-                .load(drawableResourceId)
-                .into(productImg);
-
-        titleTxt.setText(object.getTitle());
-        priceTxt.setText("$" + object.getPrice());
-        descriptionTxt.setText(object.getDescription());
     }
 
     private void setupListeners() {

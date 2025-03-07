@@ -9,7 +9,6 @@ import android.widget.LinearLayout;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.appdemo.Adapter.ProductAdapter;
@@ -38,16 +37,17 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
+        // Khởi tạo RecyclerView
         recyclerView = findViewById(R.id.view1);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
 
         // Khởi tạo databaseHelper
         databaseHelper = new ProductDatabaseHelper(this);
 
-        // Lấy danh sách sản phẩm phổ biến
+        // Lấy danh sách sản phẩm
         popularProducts = databaseHelper.getAllProducts();
 
-        // Thiết lập adapter cho RecyclerView
+        // Khởi tạo adapter với context và danh sách sản phẩm
         productAdapter = new ProductAdapter(this, popularProducts);
         recyclerView.setAdapter(productAdapter);
 

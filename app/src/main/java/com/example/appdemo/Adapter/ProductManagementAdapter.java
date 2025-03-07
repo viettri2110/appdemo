@@ -13,10 +13,10 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
-import com.example.appdemo.Helper.ProductDatabaseHelper;
+import com.example.appdemo.Activity.ProductManagementActivity;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
-import com.example.appdemo.database.DatabaseHelper;
+import com.example.appdemo.database.ProductDatabaseHelper;
 
 import java.util.List;
 
@@ -26,6 +26,7 @@ public class ProductManagementAdapter extends RecyclerView.Adapter<ProductManage
     private ProductDatabaseHelper databaseHelper;
     private OnProductClickListener onClickListener;
     private OnProductDeleteListener onDeleteListener;
+
 
 
 

@@ -1,10 +1,9 @@
 package com.example.appdemo.Activity;
 
-import android.app.Dialog;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -15,13 +14,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
-import android.widget.GridLayout;
-import android.widget.ScrollView;
-import android.app.AlertDialog;
 import android.widget.GridView;
-import android.content.Context;
-import android.widget.BaseAdapter;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -29,17 +22,16 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Adapter.ProductManagementAdapter;
-import com.example.appdemo.Helper.ProductDatabaseHelper;
+import com.example.appdemo.database.ProductDatabaseHelper;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
-import com.example.appdemo.database.DatabaseHelper;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import android.widget.BaseAdapter;
 
 public class ProductManagementActivity extends AppCompatActivity {
     private ProductDatabaseHelper databaseHelper;
@@ -81,7 +73,7 @@ public class ProductManagementActivity extends AppCompatActivity {
 
     private void setupRecyclerView() {
         products = new ArrayList<>();
-        adapter = new ProductManagementAdapter(this, products, databaseHelper , this::onProductSelected, this::onProductDelete);
+        adapter = new ProductManagementAdapter(this, products, databaseHelper, this::onProductSelected, this::onProductDelete);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }
@@ -89,35 +81,26 @@ public class ProductManagementActivity extends AppCompatActivity {
     private void loadProducts() {
         products.clear();
         products.addAll(databaseHelper.getAllProducts());
-        
-        // Log the image URLs for debugging
-        for (Product product : products) {
-            Log.d("ProductManagement", "Product Image URL: " + product.getImageUrl());
-        }
-        
         adapter.notifyDataSetChanged();
     }
 
     private void setupListeners() {
         btnChooseImage.setOnClickListener(v -> selectImage());
-        
         btnAdd.setOnClickListener(v -> {
             if (validateInput()) {
                 addProduct();
             }
         });
-
         btnUpdate.setOnClickListener(v -> {
             if (validateInput() && selectedProduct != null) {
                 updateProduct();
             }
         });
-
         btnBack.setOnClickListener(v -> onBackPressed());
     }
 
     private void onProductDelete(Product product) {
-        new androidx.appcompat.app.AlertDialog.Builder(this)
+        new AlertDialog.Builder(this)
             .setTitle("Xác nhận xóa")
             .setMessage("Bạn có chắc chắn muốn xóa sản phẩm này?")
             .setPositiveButton("Xóa", (dialog, which) -> {
@@ -135,13 +118,11 @@ public class ProductManagementActivity extends AppCompatActivity {
         edtPrice.setText(String.valueOf(product.getPrice()));
         edtDescription.setText(product.getDescription());
         edtCategory.setText(product.getCategory());
-        
+
         if (product.getImageUrl() != null) {
-            Glide.with(this)
-                .load(product.getImageUrl())
-                .into(imgProduct);
+            Glide.with(this).load(product.getImageUrl()).into(imgProduct);
         }
-        
+
         btnAdd.setEnabled(false);
         btnUpdate.setEnabled(true);
     }
@@ -217,11 +198,9 @@ public class ProductManagementActivity extends AppCompatActivity {
             ImageAdapter imageAdapter = new ImageAdapter(this, imageFiles, imgProduct);
             gridView.setAdapter(imageAdapter);
 
-            // Create and show the dialog
             AlertDialog dialog = builder.create();
             dialog.show();
 
-            // Optionally, dismiss the dialog when an image is selected in the adapter
             imageAdapter.setOnImageSelectedListener(() -> dialog.dismiss());
         } catch (IOException e) {
             e.printStackTrace();
@@ -234,7 +213,7 @@ public class ProductManagementActivity extends AppCompatActivity {
         edtPrice.setText("");
         edtDescription.setText("");
         edtCategory.setText("");
-        imgProduct.setImageResource(R.drawable.default_product_image); // Set to default image
+        imgProduct.setImageResource(R.drawable.default_product_image);
         selectedImagePath = null;
         btnAdd.setEnabled(true);
     }
@@ -242,7 +221,6 @@ public class ProductManagementActivity extends AppCompatActivity {
     public static class ImageAdapter extends BaseAdapter {
         private String[] imageFiles;
         private ImageView selectedImageView;
-
         private Context context;
         private OnImageSelectedListener onImageSelectedListener;
 
@@ -272,26 +250,19 @@ public class ProductManagementActivity extends AppCompatActivity {
             ImageView imageView;
             if (convertView == null) {
                 imageView = new ImageView(context);
-                imageView.setLayoutParams(new GridView.LayoutParams(200, 200)); // Set size
+                imageView.setLayoutParams(new GridView.LayoutParams(200, 200));
                 imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
             } else {
                 imageView = (ImageView) convertView;
             }
 
             String imagePath = "file:///android_asset/products/" + imageFiles[position];
-            Glide.with(context)
-                .load(imagePath)
-                .into(imageView);
+            Glide.with(context).load(imagePath).into(imageView);
 
             imageView.setOnClickListener(v -> {
-                Glide.with(context)
-                    .load(imagePath)
-                    .into(((ProductManagementActivity) context).imgProduct); // Update the selected image view
+                Glide.with(context).load(imagePath).into(selectedImageView);
+                ((ProductManagementActivity) context).selectedImagePath = imagePath;
 
-                // Set the selected image path in the activity
-                ((ProductManagementActivity) context).selectedImagePath = imagePath; // Set the selected image path
-
-                // Optionally dismiss the dialog if you want to close it after selection
                 if (onImageSelectedListener != null) {
                     onImageSelectedListener.onImageSelected();
                 }

@@ -51,11 +51,10 @@ public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.
             Glide.with(context)
                     .load(imagePath)
                     .transform(new GranularRoundedCorners(30, 30, 0, 0))
-                    .placeholder(R.drawable.default_product_image)
-                    .error(R.drawable.default_product_image)
+
                     .into(holder.pic);
         } else {
-            holder.pic.setImageResource(R.drawable.default_product_image);
+            holder.pic.setImageResource(R.drawable.pic1);
         }
 
         holder.itemView.setOnClickListener(v -> {

@@ -3,6 +3,7 @@ package com.example.appdemo.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.LinearLayout;
 
 import androidx.activity.EdgeToEdge;
@@ -10,8 +11,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.appdemo.Adapter.ProductAdapter;
 import com.example.appdemo.Adapter.PopularListAdapter;
-import com.example.appdemo.Helper.ProductDatabaseHelper;
+import com.example.appdemo.database.ProductDatabaseHelper;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
@@ -22,11 +24,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private PopularListAdapter adapterPopular;
+    private RecyclerView recyclerView;
     private RecyclerView recyclerViewPopular;
-    private CartManager cartManager;
-    private ProductDatabaseHelper dbHelper;
-    private List<Product> productList;
+    private ProductAdapter productAdapter;
+    private List<Product> popularProducts;
+    private ProductDatabaseHelper databaseHelper;
     private FloatingActionButton fabManageProducts;
 
     @Override
@@ -35,11 +37,20 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        dbHelper = new ProductDatabaseHelper(this);
-        cartManager = CartManager.getInstance(this);
+        recyclerView = findViewById(R.id.view1);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Khởi tạo databaseHelper
+        databaseHelper = new ProductDatabaseHelper(this);
+
+        // Lấy danh sách sản phẩm phổ biến
+        popularProducts = databaseHelper.getAllProducts();
+
+        // Thiết lập adapter cho RecyclerView
+        productAdapter = new ProductAdapter(this, popularProducts);
+        recyclerView.setAdapter(productAdapter);
 
         initViews();
-        initRecyclerView();
         initBottomNavigation();
         setupListeners();
     }
@@ -62,22 +73,12 @@ public class MainActivity extends AppCompatActivity {
         refreshProductList();
     }
 
-    private void initRecyclerView() {
-        productList = new ArrayList<>();
-        recyclerViewPopular.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
-        );
-        adapterPopular = new PopularListAdapter(productList);
-        recyclerViewPopular.setAdapter(adapterPopular);
-        refreshProductList();
-    }
-
     private void refreshProductList() {
-        if (productList != null && adapterPopular != null) {
-            productList.clear();
-            productList.addAll(dbHelper.getAllProducts());
-            Log.d("MainActivity", "Loaded products: " + productList.toString());
-            adapterPopular.notifyDataSetChanged();
+        if (popularProducts != null && productAdapter != null) {
+            popularProducts.clear();
+            popularProducts.addAll(databaseHelper.getAllProducts());
+            Log.d("MainActivity", "Loaded products: " + popularProducts.toString());
+            productAdapter.notifyDataSetChanged();
         }
     }
 

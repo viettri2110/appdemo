@@ -24,15 +24,16 @@
     </androidx.appcompat.widget.Toolbar>
 
     <!-- Cart Items List -->
+
+    <!-- Footer with Total and Order Button -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:padding="8dp"
-        android:clipToPadding="false"/>
+        android:clipToPadding="false"
+        android:padding="8dp" />
 
-    <!-- Footer with Total and Order Button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

@@ -32,11 +32,13 @@ import java.util.Locale;
 public class CartActivity extends AppCompatActivity implements CartAdapter.OnCartItemChangeListener {
     private RecyclerView recyclerView;
     private CartAdapter cartAdapter;
-    private TextView txtTotal;
     private Button btnOrderNow;
     private List<CartItem> cartItems;
     private static final int PAYMENT_REQUEST_CODE = 100;
     private CartManager cartManager;
+    private ImageView backBtn;
+    private double tax;
+    private TextView totalFeeTxt, taxTxt, deliveryTxt, totalTxt,txtTotal;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,20 +46,39 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_cart);
 
-        // Khởi tạo CartManager
         cartManager = CartManager.getInstance(this);
         
         initViews();
         initCartList();
         setupListeners();
+        calculateCart();
+    }
+
+    private void calculateCart() {
+        double percentTax = 0.02;
+        double delivery = 10;
+        
+        double itemTotal = Math.round(cartManager.getTotal() * 100.0) / 100.0;
+        tax = Math.round((itemTotal * percentTax) * 100.0) / 100.0;
+        double total = Math.round((itemTotal + tax + delivery) * 100.0) / 100.0;
+
+        totalFeeTxt.setText(String.format("$%.2f", itemTotal));
+        taxTxt.setText(String.format("$%.2f", tax));
+        deliveryTxt.setText(String.format("$%.2f", delivery));
+        totalTxt.setText(String.format("$%.2f", total));
+        txtTotal.setText(String.format("$%.2f", total));
     }
 
     private void initViews() {
         recyclerView = findViewById(R.id.recyclerView);
-        txtTotal = findViewById(R.id.txtTotal);
+        totalFeeTxt = findViewById(R.id.totalFeeTxt);
+        taxTxt = findViewById(R.id.taxTxt);
+        deliveryTxt = findViewById(R.id.deliveryTxt);
+        totalTxt = findViewById(R.id.totalTxt);
         btnOrderNow = findViewById(R.id.btnOrderNow);
+        backBtn = findViewById(R.id.backBtn);
+        txtTotal=findViewById(R.id.txtTotal);
 
-        // Kiểm tra null
         if (recyclerView == null) {
             Toast.makeText(this, "Error: RecyclerView not found", Toast.LENGTH_SHORT).show();
             finish();
@@ -73,31 +94,24 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(cartAdapter);
         
-        updateTotalPrice();
-    }
-
-    private void updateTotalPrice() {
-        double total = cartManager.getTotal();
-        txtTotal.setText(String.format(Locale.getDefault(), "Total: $%.2f", total));
-        btnOrderNow.setEnabled(!cartItems.isEmpty());
+        calculateCart();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh cart data when activity resumes
         if (cartAdapter != null) {
             cartItems.clear();
             cartItems.addAll(cartManager.getCartItems());
             cartAdapter.notifyDataSetChanged();
-            updateTotalPrice();
+            calculateCart();
         }
     }
 
     private void setupListeners() {
         btnOrderNow.setOnClickListener(v -> {
             if (cartItems != null && !cartItems.isEmpty()) {
-                double total = cartManager.getTotal();
+                double total = cartManager.getTotal() + tax + 10;
                 Intent intent = new Intent(CartActivity.this, PaymentActivity.class);
                 intent.putExtra("total_amount", total);
                 startActivityForResult(intent, PAYMENT_REQUEST_CODE);
@@ -105,19 +119,22 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
                 Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show();
             }
         });
+        
+        backBtn.setOnClickListener(v -> finish());
     }
 
     @Override
     public void onQuantityChanged() {
-        updateTotalPrice();
+        calculateCart();
     }
 
     @Override
     public void onItemRemoved(int position) {
         if (position >= 0 && position < cartItems.size()) {
+            cartManager.removeItem(position);
             cartItems.remove(position);
             cartAdapter.notifyItemRemoved(position);
-            updateTotalPrice();
+            calculateCart();
         }
     }
 
@@ -129,7 +146,7 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
             cartManager.clearCart();
             cartItems.clear();
             cartAdapter.notifyDataSetChanged();
-            updateTotalPrice();
+            calculateCart();
             finish();
         }
     }

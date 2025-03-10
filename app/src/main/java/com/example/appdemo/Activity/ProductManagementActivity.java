@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.widget.BaseAdapter;
+import android.util.Log;
 
 public class ProductManagementActivity extends AppCompatActivity {
     private ProductDatabaseHelper databaseHelper;
@@ -125,6 +126,8 @@ public class ProductManagementActivity extends AppCompatActivity {
 
         btnAdd.setEnabled(false);
         btnUpdate.setEnabled(true);
+
+        Log.d("DetailActivity", "Description: " + product.getDescription());
     }
 
     private void selectImage() {
@@ -144,24 +147,28 @@ public class ProductManagementActivity extends AppCompatActivity {
     }
 
     private void addProduct() {
-        String name = edtName.getText().toString();
-        double price = Double.parseDouble(edtPrice.getText().toString());
-        String description = edtDescription.getText().toString();
-        String category = edtCategory.getText().toString();
+        String name = edtName.getText().toString().trim();
+        String priceStr = edtPrice.getText().toString().trim();
+        String description = edtDescription.getText().toString().trim();
 
-        if (selectedImagePath == null) {
-            Toast.makeText(this, "Please select an image", Toast.LENGTH_SHORT).show();
+        if (name.isEmpty() || priceStr.isEmpty() || description.isEmpty()) {
+            Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        Product product = new Product(0, name, price, description, selectedImagePath, category);
-        long id = databaseHelper.addProduct(product);
-        if (id > 0) {
-            product.setId((int) id);
-            products.add(product);
-            adapter.notifyItemInserted(products.size() - 1);
-            clearForm();
-            Toast.makeText(this, "Product added successfully", Toast.LENGTH_SHORT).show();
+        try {
+            double price = Double.parseDouble(priceStr);
+            Product newProduct = new Product(0, name, price, description, null, null);
+            long id = databaseHelper.addProduct(newProduct);
+            if (id != -1) {
+                loadProducts();
+                clearInputFields();
+                Toast.makeText(this, "Thêm sản phẩm thành công", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "Không thể thêm sản phẩm", Toast.LENGTH_SHORT).show();
+            }
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Giá không hợp lệ", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -216,6 +223,14 @@ public class ProductManagementActivity extends AppCompatActivity {
         imgProduct.setImageResource(R.drawable.default_product_image);
         selectedImagePath = null;
         btnAdd.setEnabled(true);
+    }
+
+    private void clearInputFields() {
+        edtName.setText("");
+        edtPrice.setText("");
+        edtDescription.setText("");
+        edtCategory.setText("");
+        imgProduct.setImageResource(R.drawable.placeholder_image);
     }
 
     public static class ImageAdapter extends BaseAdapter {

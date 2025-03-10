@@ -66,6 +66,15 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, ProductManagementActivity.class);
             startActivity(intent);
         });
+
+        productAdapter.setOnItemClickListener(new ProductAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Product product) {
+                Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+                intent.putExtra("product", product);
+                startActivity(intent);
+            }
+        });
     }
 
     @Override

@@ -9,4 +9,5 @@
     <color name="red">#E76106</color>
     <color name="grey">#808080</color>
     <color name="light_grey">#EEEEEE</color>
+    <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

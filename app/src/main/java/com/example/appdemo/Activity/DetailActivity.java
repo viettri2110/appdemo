@@ -36,7 +36,7 @@ public class DetailActivity extends AppCompatActivity {
     }
 
     private void initView() {
-
+        backBtn=findViewById(R.id.backBtn);
         titleTxt = findViewById(R.id.titleTxt);
         priceTxt = findViewById(R.id.priceTxt);
         descriptionTxt = findViewById(R.id.descriptionTxt);
@@ -62,6 +62,8 @@ public class DetailActivity extends AppCompatActivity {
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.placeholder_image)
                     .into(productImg);
+
+            Log.d("DetailActivity", "Description: " + product.getDescription());
         } else {
             Log.e("DetailActivity", "Product is null");
             finish(); // Đóng activity nếu sản phẩm null
@@ -80,7 +82,7 @@ public class DetailActivity extends AppCompatActivity {
                 numberOrderTxt.setText(String.valueOf(numberOrder));
             }
         });
-      //  backBtn.setOnClickListener(v -> finish());
+        backBtn.setOnClickListener(v -> finish());
 
 //      addToCartBtn.setOnClickListener(v -> {
 //            cartManager.addToCart(new Product(titleTxt.getText().toString(), priceTxt.getText().toString(), numberOrder));

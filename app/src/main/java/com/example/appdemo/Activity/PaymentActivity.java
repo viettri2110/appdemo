@@ -134,7 +134,7 @@ public class PaymentActivity extends AppCompatActivity {
     }
 
     private boolean validateInputs() {
-        if (edtCardNumber.getText().toString().replace(" ", "").length() != 16) {
+        if (edtCardNumber.getText().toString().replace(" ", "").length() != 10) {
             edtCardNumber.setError("Invalid card number");
             return false;
         }

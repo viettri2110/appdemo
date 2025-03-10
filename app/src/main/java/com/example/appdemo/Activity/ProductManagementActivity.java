@@ -27,12 +27,18 @@ import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import android.widget.BaseAdapter;
 import android.util.Log;
+import android.Manifest;
+import android.content.pm.PackageManager;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.annotation.NonNull;
 
 public class ProductManagementActivity extends AppCompatActivity {
     private ProductDatabaseHelper databaseHelper;
@@ -46,6 +52,9 @@ public class ProductManagementActivity extends AppCompatActivity {
     private String selectedImagePath;
     private Product selectedProduct;
     private static final int IMAGE_PICK_CODE = 100;
+    private static final int PICK_IMAGE_REQUEST = 1;
+    private Uri selectedImageUri;
+    private static final int PERMISSION_CODE = 1001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +66,10 @@ public class ProductManagementActivity extends AppCompatActivity {
         setupRecyclerView();
         loadProducts();
         setupListeners();
+
+        imgProduct.setOnClickListener(v -> {
+            openImagePicker();
+        });
     }
 
     private void initViews() {
@@ -86,18 +99,10 @@ public class ProductManagementActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        btnChooseImage.setOnClickListener(v -> selectImage());
-        btnAdd.setOnClickListener(v -> {
-            if (validateInput()) {
-                addProduct();
-            }
-        });
-        btnUpdate.setOnClickListener(v -> {
-            if (validateInput() && selectedProduct != null) {
-                updateProduct();
-            }
-        });
-        btnBack.setOnClickListener(v -> onBackPressed());
+        btnAdd.setOnClickListener(v -> addProduct());
+        btnUpdate.setOnClickListener(v -> updateProduct());
+        btnBack.setOnClickListener(v -> finish());
+        btnChooseImage.setOnClickListener(v -> openImagePicker());
     }
 
     private void onProductDelete(Product product) {
@@ -150,19 +155,36 @@ public class ProductManagementActivity extends AppCompatActivity {
         String name = edtName.getText().toString().trim();
         String priceStr = edtPrice.getText().toString().trim();
         String description = edtDescription.getText().toString().trim();
+        String category = edtCategory.getText().toString().trim();
 
-        if (name.isEmpty() || priceStr.isEmpty() || description.isEmpty()) {
-            Toast.makeText(this, "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
+        if (name.isEmpty() || priceStr.isEmpty() || description.isEmpty() || category.isEmpty()) {
+            Toast.makeText(this, "Vui lòng điền đầy đủ thông tin", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (selectedImageUri == null) {
+            Toast.makeText(this, "Vui lòng chọn hình ảnh", Toast.LENGTH_SHORT).show();
             return;
         }
 
         try {
             double price = Double.parseDouble(priceStr);
-            Product newProduct = new Product(0, name, price, description, null, null);
+            
+            // Lưu ảnh và lấy đường dẫn
+            String imagePath = saveImageToInternalStorage(selectedImageUri);
+            if (imagePath == null) {
+                Toast.makeText(this, "Không thể lưu hình ảnh", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Product newProduct = new Product(0, name, price, description, imagePath, category);
             long id = databaseHelper.addProduct(newProduct);
+            
             if (id != -1) {
-                loadProducts();
-                clearInputFields();
+                newProduct.setId((int) id);
+                products.add(newProduct);
+                adapter.notifyItemInserted(products.size() - 1);
+                clearForm();
                 Toast.makeText(this, "Thêm sản phẩm thành công", Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(this, "Không thể thêm sản phẩm", Toast.LENGTH_SHORT).show();
@@ -220,7 +242,7 @@ public class ProductManagementActivity extends AppCompatActivity {
         edtPrice.setText("");
         edtDescription.setText("");
         edtCategory.setText("");
-        imgProduct.setImageResource(R.drawable.default_product_image);
+        imgProduct.setImageResource(R.drawable.placeholder_image);
         selectedImagePath = null;
         btnAdd.setEnabled(true);
     }
@@ -293,5 +315,93 @@ public class ProductManagementActivity extends AppCompatActivity {
 
     public interface OnImageSelectedListener {
         void onImageSelected();
+    }
+
+    private void openImagePicker() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            // Android 13 và cao hơn
+            if (checkSelfPermission(Manifest.permission.READ_MEDIA_IMAGES) 
+                    == PackageManager.PERMISSION_DENIED) {
+                String[] permissions = {Manifest.permission.READ_MEDIA_IMAGES};
+                requestPermissions(permissions, PERMISSION_CODE);
+            } else {
+                pickImageFromGallery();
+            }
+        } else {
+            // Android 12 và thấp hơn
+            if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) 
+                    == PackageManager.PERMISSION_DENIED) {
+                String[] permissions = {Manifest.permission.READ_EXTERNAL_STORAGE};
+                requestPermissions(permissions, PERMISSION_CODE);
+            } else {
+                pickImageFromGallery();
+            }
+        }
+    }
+
+    private void pickImageFromGallery() {
+        Intent intent = new Intent(Intent.ACTION_PICK);
+        intent.setType("image/*");
+        startActivityForResult(intent, PICK_IMAGE_REQUEST);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSION_CODE: {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    pickImageFromGallery();
+                } else {
+                    Toast.makeText(this, "Quyền truy cập bị từ chối", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == PICK_IMAGE_REQUEST && resultCode == RESULT_OK && data != null) {
+            selectedImageUri = data.getData();
+            try {
+                // Hiển thị ảnh đã chọn
+                Glide.with(this)
+                    .load(selectedImageUri)
+                    .placeholder(R.drawable.placeholder_image)
+                    .error(R.drawable.placeholder_image)
+                    .into(imgProduct);
+                
+                // Lưu đường dẫn ảnh
+                selectedImagePath = selectedImageUri.toString();
+                
+                Log.d("ImagePicker", "Selected image URI: " + selectedImageUri);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Toast.makeText(this, "Lỗi khi tải ảnh", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    private String saveImageToInternalStorage(Uri imageUri) {
+        try {
+            Bitmap bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), imageUri);
+            File directory = new File(getFilesDir(), "product_images");
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            String fileName = "IMG_" + System.currentTimeMillis() + ".jpg";
+            File file = new File(directory, fileName);
+
+            FileOutputStream fos = new FileOutputStream(file);
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, fos);
+            fos.close();
+
+            return file.getAbsolutePath();
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

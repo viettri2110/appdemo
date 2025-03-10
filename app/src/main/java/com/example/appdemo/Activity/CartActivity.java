@@ -44,7 +44,7 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_cart);
 
-        // Khởi tạo CartManager với context
+        // Khởi tạo CartManager
         cartManager = CartManager.getInstance(this);
         
         initViews();
@@ -56,24 +56,29 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         recyclerView = findViewById(R.id.recyclerView);
         txtTotal = findViewById(R.id.txtTotal);
         btnOrderNow = findViewById(R.id.btnOrderNow);
+
+        // Kiểm tra null
+        if (recyclerView == null) {
+            Toast.makeText(this, "Error: RecyclerView not found", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
     }
 
     private void initCartList() {
         cartItems = new ArrayList<>();
-        // Lấy danh sách cart items từ CartManager
         cartItems.addAll(cartManager.getCartItems());
 
         cartAdapter = new CartAdapter(cartItems, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(cartAdapter);
         
-        // Cập nhật tổng tiền
         updateTotalPrice();
     }
 
     private void updateTotalPrice() {
         double total = cartManager.getTotal();
-        txtTotal.setText(String.format(Locale.getDefault(), "$%.2f", total));
+        txtTotal.setText(String.format(Locale.getDefault(), "Total: $%.2f", total));
         btnOrderNow.setEnabled(!cartItems.isEmpty());
     }
 

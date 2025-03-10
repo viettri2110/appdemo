@@ -22,6 +22,7 @@ public class DetailActivity extends AppCompatActivity {
     private Button addToCartBtn;
     private int numberOrder = 1;
     private CartManager cartManager;
+    private Product currentProduct;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,24 +50,21 @@ public class DetailActivity extends AppCompatActivity {
 
     private void getBundle() {
         Intent intent = getIntent();
-        Product product = (Product) intent.getSerializableExtra("product"); // Nhận sản phẩm từ Intent
+        currentProduct = (Product) intent.getSerializableExtra("product");
 
-        if (product != null) {
-            titleTxt.setText(product.getName());
-            priceTxt.setText(String.format("$%.2f", product.getPrice()));
-            descriptionTxt.setText(product.getDescription());
+        if (currentProduct != null) {
+            titleTxt.setText(currentProduct.getName());
+            priceTxt.setText(String.format("$%.2f", currentProduct.getPrice()));
+            descriptionTxt.setText(currentProduct.getDescription());
 
             // Tải hình ảnh sản phẩm
             Glide.with(this)
-                    .load(product.getImageUrl())
+                    .load(currentProduct.getImageUrl())
                     .placeholder(R.drawable.placeholder_image)
                     .error(R.drawable.placeholder_image)
                     .into(productImg);
 
-            Log.d("DetailActivity", "Description: " + product.getDescription());
-        } else {
-            Log.e("DetailActivity", "Product is null");
-            finish(); // Đóng activity nếu sản phẩm null
+            Log.d("DetailActivity", "Description: " + currentProduct.getDescription());
         }
     }
 
@@ -84,11 +82,18 @@ public class DetailActivity extends AppCompatActivity {
         });
         backBtn.setOnClickListener(v -> finish());
 
-//      addToCartBtn.setOnClickListener(v -> {
-//            cartManager.addToCart(new Product(titleTxt.getText().toString(), priceTxt.getText().toString(), numberOrder));
-//           Toast.makeText(this, "Added " + numberOrder + " items to cart", Toast.LENGTH_SHORT).show();
-//            finish();
-//       });
+        addToCartBtn.setOnClickListener(v -> {
+            if (currentProduct != null) {
+                // Thêm sản phẩm vào giỏ hàng với số lượng đã chọn
+                for (int i = 0; i < numberOrder; i++) {
+                    cartManager.addToCart(currentProduct);
+                }
+                
+                Toast.makeText(DetailActivity.this, 
+                    "Added " + numberOrder + " item(s) to cart", 
+                    Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }
 

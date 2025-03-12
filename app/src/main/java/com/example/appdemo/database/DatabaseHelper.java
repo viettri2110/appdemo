@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.content.SharedPreferences;
 
 import java.util.ArrayList;
 
@@ -19,8 +20,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_IS_ADMIN = "is_admin";
 
+    private Context context;
+
     public DatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context;
     }
 
     @Override
@@ -70,14 +74,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public boolean checkUser(String email, String password) {
         SQLiteDatabase db = this.getReadableDatabase();
-        String[] columns = {COLUMN_EMAIL};
-        String selection = COLUMN_EMAIL + " = ? AND " + COLUMN_PASSWORD + " = ?";
-        String[] selectionArgs = {email, password};
-        Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null);
-        int count = cursor.getCount();
-        cursor.close();
-        db.close();
-        return count > 0;
+        Cursor cursor = db.query(TABLE_USERS,
+            new String[]{COLUMN_EMAIL, COLUMN_PASSWORD, COLUMN_IS_ADMIN},
+            COLUMN_EMAIL + " = ? AND " + COLUMN_PASSWORD + " = ?",
+            new String[]{email, password}, 
+            null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            boolean isAdmin = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_ADMIN)) == 1;
+            
+            // Lưu thông tin đăng nhập và quyền admin vào SharedPreferences
+            SharedPreferences.Editor editor = context.getSharedPreferences("UserPrefs", Context.MODE_PRIVATE).edit();
+            editor.putString("email", email);
+            editor.putBoolean("isAdmin", isAdmin);
+            editor.apply();
+            
+            cursor.close();
+            return true;
+        }
+        if (cursor != null) {
+            cursor.close();
+        }
+        return false;
     }
 
     public String getUserName(String email) {

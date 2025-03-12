@@ -39,6 +39,7 @@ import android.content.pm.PackageManager;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.annotation.NonNull;
+import android.content.SharedPreferences;
 
 public class ProductManagementActivity extends AppCompatActivity {
     private ProductDatabaseHelper databaseHelper;
@@ -59,6 +60,17 @@ public class ProductManagementActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        
+        // Kiểm tra quyền admin
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+        
+        if (!isAdmin) {
+            Toast.makeText(this, "Bạn không có quyền truy cập", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        
         setContentView(R.layout.activity_product_management);
 
         databaseHelper = new ProductDatabaseHelper(this);

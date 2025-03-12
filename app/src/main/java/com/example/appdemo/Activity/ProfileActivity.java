@@ -65,7 +65,7 @@ public class ProfileActivity extends AppCompatActivity {
         txtUsername.setText(username);
         txtEmail.setText(email);
         
-        // Hiển thị admin controls nếu user là admin
+        // Chỉ giữ lại phần hiển thị admin controls
         adminControlsCard.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
     }
 

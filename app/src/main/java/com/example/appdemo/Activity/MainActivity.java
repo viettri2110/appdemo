@@ -1,10 +1,12 @@
 package com.example.appdemo.Activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -52,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(productAdapter);
 
         initViews();
+        checkAdminRights();
         initBottomNavigation();
         setupListeners();
     }
@@ -59,12 +62,34 @@ public class MainActivity extends AppCompatActivity {
     private void initViews() {
         recyclerViewPopular = findViewById(R.id.view1);
         fabManageProducts = findViewById(R.id.fabManageProducts);
+        
+        // Kiểm tra quyền admin và ẩn/hiện nút quản lý sản phẩm
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+        fabManageProducts.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+    }
+
+    private void checkAdminRights() {
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+        
+        if (fabManageProducts != null) {
+            fabManageProducts.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        }
     }
 
     private void setupListeners() {
         fabManageProducts.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, ProductManagementActivity.class);
-            startActivity(intent);
+            // Kiểm tra lại quyền admin trước khi mở ProductManagement
+            SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+            
+            if (isAdmin) {
+                Intent intent = new Intent(MainActivity.this, ProductManagementActivity.class);
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "Bạn không có quyền truy cập chức năng này", Toast.LENGTH_SHORT).show();
+            }
         });
 
         productAdapter.setOnItemClickListener(new ProductAdapter.OnItemClickListener() {
@@ -81,6 +106,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         refreshProductList();
+        checkAdminRights();
     }
 
     private void refreshProductList() {

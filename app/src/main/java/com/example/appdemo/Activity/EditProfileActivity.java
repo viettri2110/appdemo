@@ -83,20 +83,20 @@ public class EditProfileActivity extends AppCompatActivity {
         progressDialog.show();
 
         new Thread(() -> {
-          boolean success;
-          if (currentPassword.isEmpty()) {
-             // Chỉ cập nhật tên
-               success = databaseHelper.updateUserName(email, name);
-         } else {
-              // Kiểm tra mật khẩu hiện tại
-              if (!databaseHelper.checkUser(email, currentPassword)) {
+            boolean success;
+            if (currentPassword.isEmpty()) {
+                // Chỉ cập nhật tên
+                success = databaseHelper.updateUserName(email, name);
+            } else {
+                // Kiểm tra mật khẩu hiện tại
+                if (!databaseHelper.checkUser(email, currentPassword)) {
                     runOnUiThread(() -> {
                         progressDialog.dismiss();
-                       edtCurrentPassword.setError("Mật khẩu không đúng");
+                        edtCurrentPassword.setError("Mật khẩu không đúng");
                     });
-                   return;
-               }
-              // Cập nhật cả tên và mật khẩu
+                    return;
+                }
+                // Cập nhật cả tên và mật khẩu
                 success = databaseHelper.updateUser(email, name, newPassword);
             }
             runOnUiThread(() -> {

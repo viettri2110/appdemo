@@ -61,7 +61,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private void setupListeners() {
         btnSave.setOnClickListener(v -> updateProfile());
         btnBack.setOnClickListener(v -> finish());
-      //  btnDelete.setOnClickListener(v -> deleteAccount());
+        btnDelete.setOnClickListener(v -> deleteAccount());
     }
 
     private void updateProfile() {
@@ -82,73 +82,72 @@ public class EditProfileActivity extends AppCompatActivity {
 
         progressDialog.show();
 
-//        new Thread(() -> {
-//            boolean success;
-//            if (currentPassword.isEmpty()) {
-//                // Chỉ cập nhật tên
-//             //   success = databaseHelper.updateUserName(email, name);
-//            } else {
-//                // Kiểm tra mật khẩu hiện tại
-//                if (!databaseHelper.checkUser(email, currentPassword)) {
-//                    runOnUiThread(() -> {
-//                        progressDialog.dismiss();
-//                        edtCurrentPassword.setError("Mật khẩu không đúng");
-//                    });
-//                    return;
-//                }
-//                // Cập nhật cả tên và mật khẩu
-//                success = databaseHelper.updateUser(email, name, newPassword);
-//            }
-//
-//            runOnUiThread(() -> {
-//                progressDialog.dismiss();
-//           //     if (success) {
-//                    Toast.makeText(EditProfileActivity.this,
-//                            "Cập nhật thành công", Toast.LENGTH_SHORT).show();
-//                    finish();
-//                } else {
-//                    Toast.makeText(EditProfileActivity.this,
-//                            "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
-//                }
-//            });
-//        }).start();
-//    }
-//
-//    private void deleteAccount() {
-//        androidx.appcompat.app.AlertDialog.Builder builder =
-//                new androidx.appcompat.app.AlertDialog.Builder(this);
-//        builder.setTitle("Xóa tài khoản");
-//        builder.setMessage("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.");
-//        builder.setPositiveButton("Xóa", (dialog, which) -> {
-//            progressDialog.setMessage("Đang xóa tài khoản...");
-//            progressDialog.show();
-//
-//            new Thread(() -> {
-//                String email = edtEmail.getText().toString().trim();
-//                boolean success = databaseHelper.deleteUser(email);
-//
-//                runOnUiThread(() -> {
-//                    progressDialog.dismiss();
-//                    if (success) {
-//                        // Xóa thông tin đăng nhập
-//                        SharedPreferences.Editor editor = sharedPreferences.edit();
-//                        editor.clear();
-//                        editor.apply();
-//
-//                        Toast.makeText(EditProfileActivity.this,
-//                                "Tài khoản đã được xóa", Toast.LENGTH_SHORT).show();
-//
-//                        // Chuyển về màn hình đăng nhập
-//                        finishAffinity();
-//                        startActivity(new Intent(EditProfileActivity.this, LoginActivity.class));
-//                    } else {
-//                        Toast.makeText(EditProfileActivity.this,
-//                                "Không thể xóa tài khoản", Toast.LENGTH_SHORT).show();
-//                    }
-//                });
-//            }).start();
-//        });
-//        builder.setNegativeButton("Hủy", null);
-//        builder.show();
+        new Thread(() -> {
+          boolean success;
+          if (currentPassword.isEmpty()) {
+             // Chỉ cập nhật tên
+               success = databaseHelper.updateUserName(email, name);
+         } else {
+              // Kiểm tra mật khẩu hiện tại
+              if (!databaseHelper.checkUser(email, currentPassword)) {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                       edtCurrentPassword.setError("Mật khẩu không đúng");
+                    });
+                   return;
+               }
+              // Cập nhật cả tên và mật khẩu
+                success = databaseHelper.updateUser(email, name, newPassword);
+            }
+            runOnUiThread(() -> {
+                progressDialog.dismiss();
+                if (success) {
+                    Toast.makeText(EditProfileActivity.this,
+                            "Cập nhật thành công", Toast.LENGTH_SHORT).show();
+                    finish();
+                } else {
+                    Toast.makeText(EditProfileActivity.this,
+                            "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }).start();
+    }
 
-}    }
+    private void deleteAccount() {
+        androidx.appcompat.app.AlertDialog.Builder builder =
+                new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle("Xóa tài khoản");
+        builder.setMessage("Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.");
+        builder.setPositiveButton("Xóa", (dialog, which) -> {
+            progressDialog.setMessage("Đang xóa tài khoản...");
+            progressDialog.show();
+
+            new Thread(() -> {
+                String email = edtEmail.getText().toString().trim();
+                boolean success = databaseHelper.deleteUser(email);
+
+                runOnUiThread(() -> {
+                    progressDialog.dismiss();
+                    if (success) {
+                        // Xóa thông tin đăng nhập
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.clear();
+                        editor.apply();
+
+                        Toast.makeText(EditProfileActivity.this,
+                                "Tài khoản đã được xóa", Toast.LENGTH_SHORT).show();
+
+                        // Chuyển về màn hình đăng nhập
+                        finishAffinity();
+                        startActivity(new Intent(EditProfileActivity.this, LoginActivity.class));
+                    } else {
+                        Toast.makeText(EditProfileActivity.this,
+                                "Không thể xóa tài khoản", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }).start();
+        });
+        builder.setNegativeButton("Hủy", null);
+        builder.show();
+    }
+}

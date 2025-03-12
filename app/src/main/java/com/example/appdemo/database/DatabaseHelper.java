@@ -82,17 +82,41 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public String getUserName(String email) {
         SQLiteDatabase db = this.getReadableDatabase();
-        String[] columns = {COLUMN_NAME};
-        String selection = COLUMN_EMAIL + " = ?";
-        String[] selectionArgs = {email};
-        Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null);
         String name = null;
-        if (cursor.moveToFirst()) {
-            name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
+
+        try {
+            Cursor cursor = db.query(TABLE_USERS, new String[]{COLUMN_NAME}, 
+                COLUMN_EMAIL + " = ?", new String[]{email}, null, null, null);
+            
+            if (cursor != null && cursor.moveToFirst()) {
+                name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
+                cursor.close();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.close();
         }
-        cursor.close();
-        db.close();
+
         return name;
+    }
+
+    public boolean updateUserName(String email, String newName) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_NAME, newName);
+
+        try {
+            // Cập nhật tên người dùng dựa trên email
+            int result = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", 
+                new String[]{email});
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            db.close();
+        }
     }
 
     public boolean updateUser(String email, String newName, String newPassword) {
@@ -100,11 +124,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME, newName);
         values.put(COLUMN_PASSWORD, newPassword);
-        String whereClause = COLUMN_EMAIL + " = ?";
-        String[] whereArgs = {email};
-        int result = db.update(TABLE_USERS, values, whereClause, whereArgs);
-        db.close();
-        return result > 0;
+
+        try {
+            // Cập nhật cả tên và mật khẩu dựa trên email
+            int result = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", 
+                new String[]{email});
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            db.close();
+        }
     }
 
     public boolean deleteUser(String email) {

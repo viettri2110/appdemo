@@ -49,6 +49,12 @@
         <activity android:name=".Activity.ProductManagementActivity"
             android:exported="false"
             android:label="Product Management"/>
+        <activity
+            android:name=".Activity.OrderHistoryActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".Activity.ReviewsActivity"
+            android:exported="false"/>
     </application>
 
 </manifest>

@@ -2,45 +2,27 @@ package com.example.appdemo.Activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import android.widget.LinearLayout;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.example.appdemo.database.DatabaseHelper;
 import com.example.appdemo.R;
 
-import java.util.ArrayList;
-
 public class ProfileActivity extends AppCompatActivity {
     private TextView txtUsername, txtEmail;
-    private Button btnManageProducts, btnManageOrders, btnEditProfile, btnLogout;
-    private Button btnAdd, btnEdit, btnDelete;
+    private Button btnLogout;
     private CardView adminControlsCard;
+    private LinearLayout layoutOrders, layoutReviews, layoutEdit;
+    private Button btnViewAllOrders;
+    private RecyclerView recyclerRecentOrders;
     private SharedPreferences sharedPreferences;
-    private EditText edtProductName, edtProductPrice;
-    private ImageView imgProduct;
-    private RecyclerView recyclerProducts;
-    private int selectedProductIndex = -1;
     private DatabaseHelper dbHelper;
-
-    // Move interface outside of ProductAdapter
-    private interface OnProductClickListener {
-        void onProductClick(int position);
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,26 +31,30 @@ public class ProfileActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         initViews();
+        setupListeners();
         loadUserData();
     }
 
     private void initViews() {
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
-        btnManageProducts = findViewById(R.id.btnManageProducts);
-        btnManageOrders = findViewById(R.id.btnManageOrders);
-        btnEditProfile = findViewById(R.id.btnEditProfile);
         btnLogout = findViewById(R.id.btnLogout);
         adminControlsCard = findViewById(R.id.adminControlsCard);
-        edtProductName = findViewById(R.id.edtProductName);
-        edtProductPrice = findViewById(R.id.edtProductPrice);
-        imgProduct = findViewById(R.id.imgProduct);
-        btnAdd = findViewById(R.id.btnAdd);
-        btnEdit = findViewById(R.id.btnEdit);
-        btnDelete = findViewById(R.id.btnDelete);
-        recyclerProducts = findViewById(R.id.recyclerProducts);
+        layoutOrders = findViewById(R.id.layoutOrders);
+        layoutReviews = findViewById(R.id.layoutReviews);
+        layoutEdit = findViewById(R.id.layoutEdit);
+        btnViewAllOrders = findViewById(R.id.btnViewAllOrders);
+        recyclerRecentOrders = findViewById(R.id.recyclerRecentOrders);
 
         sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+    }
+
+    private void setupListeners() {
+        btnLogout.setOnClickListener(v -> logout());
+        layoutOrders.setOnClickListener(v -> openOrderHistory());
+        layoutReviews.setOnClickListener(v -> openReviews());
+        layoutEdit.setOnClickListener(v -> openEditProfile());
+        btnViewAllOrders.setOnClickListener(v -> openOrderHistory());
     }
 
     private void loadUserData() {
@@ -83,10 +69,45 @@ public class ProfileActivity extends AppCompatActivity {
         adminControlsCard.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
     }
 
+    private void logout() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Đăng xuất")
+            .setMessage("Bạn có chắc chắn muốn đăng xuất?")
+            .setPositiveButton("Đăng xuất", (dialog, which) -> {
+                // Xóa thông tin đăng nhập
+                SharedPreferences.Editor editor = sharedPreferences.edit();
+                editor.clear();
+                editor.apply();
 
+                // Chuyển về màn hình đăng nhập
+                Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            })
+            .setNegativeButton("Hủy", null)
+            .show();
+    }
 
+    private void openOrderHistory() {
+        Intent intent = new Intent(this, OrderHistoryActivity.class);
+        startActivity(intent);
+    }
 
+    private void openReviews() {
+        Intent intent = new Intent(this, ReviewsActivity.class);
+        startActivity(intent);
+    }
 
+    private void openEditProfile() {
+        Intent intent = new Intent(this, EditProfileActivity.class);
+        startActivity(intent);
+    }
 
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Cập nhật thông tin user khi quay lại từ EditProfileActivity
+        loadUserData();
+    }
 } 

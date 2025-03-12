@@ -241,6 +241,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Quản lý đơn hàng"/>
+
+                    <Button
+                        android:id="@+id/btnUserManagement"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Quản lý người dùng"/>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 

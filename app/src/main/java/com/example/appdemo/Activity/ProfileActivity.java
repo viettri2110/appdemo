@@ -16,7 +16,7 @@ import com.example.appdemo.R;
 
 public class ProfileActivity extends AppCompatActivity {
     private TextView txtUsername, txtEmail;
-    private Button btnLogout;
+    private Button btnLogout, btnUserManagement;
     private CardView adminControlsCard;
     private LinearLayout layoutOrders, layoutReviews, layoutEdit;
     private Button btnViewAllOrders;
@@ -39,6 +39,7 @@ public class ProfileActivity extends AppCompatActivity {
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
         btnLogout = findViewById(R.id.btnLogout);
+        btnUserManagement = findViewById(R.id.btnUserManagement);
         adminControlsCard = findViewById(R.id.adminControlsCard);
         layoutOrders = findViewById(R.id.layoutOrders);
         layoutReviews = findViewById(R.id.layoutReviews);
@@ -55,6 +56,9 @@ public class ProfileActivity extends AppCompatActivity {
         layoutReviews.setOnClickListener(v -> openReviews());
         layoutEdit.setOnClickListener(v -> openEditProfile());
         btnViewAllOrders.setOnClickListener(v -> openOrderHistory());
+        
+        // Thay đổi cách xử lý click cho nút quản lý người dùng
+        btnUserManagement.setOnClickListener(v -> openUserManagement());
     }
 
     private void loadUserData() {
@@ -65,8 +69,9 @@ public class ProfileActivity extends AppCompatActivity {
         txtUsername.setText(username);
         txtEmail.setText(email);
         
-        // Chỉ giữ lại phần hiển thị admin controls
+        // Hiển thị admin controls và nút quản lý người dùng
         adminControlsCard.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        btnUserManagement.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
     }
 
     private void logout() {
@@ -102,6 +107,16 @@ public class ProfileActivity extends AppCompatActivity {
     private void openEditProfile() {
         Intent intent = new Intent(this, EditProfileActivity.class);
         startActivity(intent);
+    }
+
+    private void openUserManagement() {
+        try {
+            Intent intent = new Intent(ProfileActivity.this, UserManagementActivity.class);
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Không thể mở trang quản lý người dùng", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

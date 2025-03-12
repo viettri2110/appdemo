@@ -55,6 +55,9 @@
         <activity
             android:name=".Activity.ReviewsActivity"
             android:exported="false"/>
+        <activity
+            android:name=".Activity.UserManagementActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

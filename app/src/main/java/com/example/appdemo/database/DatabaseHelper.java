@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.content.SharedPreferences;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
@@ -163,5 +164,62 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         int result = db.delete(TABLE_USERS, whereClause, whereArgs);
         db.close();
         return result > 0;
+    }
+
+    public boolean updateUserAdminStatus(String email, boolean isAdmin) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_IS_ADMIN, isAdmin ? 1 : 0);
+
+        try {
+            int result = db.update(TABLE_USERS, values, COLUMN_EMAIL + " = ?", 
+                new String[]{email});
+            return result > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            db.close();
+        }
+    }
+
+    // Thêm phương thức để lấy danh sách tất cả users
+    public List<UserInfo> getAllUsers() {
+        List<UserInfo> users = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        Cursor cursor = db.query(TABLE_USERS,
+            new String[]{COLUMN_EMAIL, COLUMN_NAME, COLUMN_IS_ADMIN},
+            null, null, null, null, null);
+
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String email = cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL));
+                String name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
+                boolean isAdmin = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_ADMIN)) == 1;
+                
+                users.add(new UserInfo(email, name, isAdmin));
+            } while (cursor.moveToNext());
+            cursor.close();
+        }
+        
+        return users;
+    }
+
+    // Thêm class UserInfo để lưu thông tin user
+    public static class UserInfo {
+        private String email;
+        private String name;
+        private boolean isAdmin;
+
+        public UserInfo(String email, String name, boolean isAdmin) {
+            this.email = email;
+            this.name = name;
+            this.isAdmin = isAdmin;
+        }
+
+        public String getEmail() { return email; }
+        public String getName() { return name; }
+        public boolean isAdmin() { return isAdmin; }
     }
 } 

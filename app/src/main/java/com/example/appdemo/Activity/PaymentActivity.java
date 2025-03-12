@@ -1,6 +1,7 @@
 package com.example.appdemo.Activity;
 
 import android.app.ProgressDialog;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,6 +13,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.appdemo.R;
+import com.example.appdemo.database.DatabaseHelper;
 
 import java.util.Locale;
 
@@ -21,11 +23,16 @@ public class PaymentActivity extends AppCompatActivity {
     private Button btnPay;
     private ProgressDialog progressDialog;
     private double totalAmount = 0;
+    private DatabaseHelper dbHelper;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_payment);
+
+        dbHelper = new DatabaseHelper(this);
+        sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
 
         // Nhận số tiền từ CartActivity
         if (getIntent().hasExtra("total_amount")) {
@@ -118,14 +125,22 @@ public class PaymentActivity extends AppCompatActivity {
         new Thread(() -> {
             try {
                 Thread.sleep(2000); // Giả lập xử lý thanh toán
+                
+                // Lưu đơn hàng vào database
+                String userId = sharedPreferences.getString("email", "");
+                long orderId = dbHelper.addOrder(userId, totalAmount);
+
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
-                    Toast.makeText(PaymentActivity.this, 
-                        "Payment successful!", Toast.LENGTH_SHORT).show();
-                    
-                    // Trả về kết quả thành công cho CartActivity
-                    setResult(RESULT_OK);
-                    finish();
+                    if (orderId != -1) {
+                        Toast.makeText(PaymentActivity.this, 
+                            "Thanh toán thành công!", Toast.LENGTH_SHORT).show();
+                        setResult(RESULT_OK);
+                        finish();
+                    } else {
+                        Toast.makeText(PaymentActivity.this, 
+                            "Có lỗi xảy ra khi lưu đơn hàng", Toast.LENGTH_SHORT).show();
+                    }
                 });
             } catch (InterruptedException e) {
                 e.printStackTrace();

@@ -9,10 +9,15 @@ import android.content.SharedPreferences;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+
+import com.example.appdemo.Model.Order;
+import com.example.appdemo.Model.OrderItem;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 4;
 
     // Bảng Users
     private static final String TABLE_USERS = "users";
@@ -20,6 +25,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_PASSWORD = "password";
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_IS_ADMIN = "is_admin";
+
+    // Thêm bảng orders
+    private static final String TABLE_ORDERS = "orders";
+    private static final String COLUMN_ORDER_ID = "order_id";
+    private static final String COLUMN_USER_ID = "user_id";
+    private static final String COLUMN_TOTAL_AMOUNT = "total_amount";
+    private static final String COLUMN_ORDER_DATE = "order_date";
+    private static final String COLUMN_STATUS = "status";
+
+    // Thêm bảng order_items
+    private static final String TABLE_ORDER_ITEMS = "order_items";
+    private static final String COLUMN_ITEM_ID = "item_id";
+    private static final String COLUMN_PRODUCT_ID = "product_id";
+    private static final String COLUMN_PRODUCT_NAME = "product_name";
+    private static final String COLUMN_QUANTITY = "quantity";
+    private static final String COLUMN_PRICE = "price";
 
     private Context context;
 
@@ -39,6 +60,29 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_USERS_TABLE);
 
+        // Tạo bảng orders trước order_items vì có foreign key
+        String CREATE_ORDERS_TABLE = "CREATE TABLE " + TABLE_ORDERS + "("
+                + COLUMN_ORDER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_USER_ID + " TEXT,"
+                + COLUMN_TOTAL_AMOUNT + " REAL,"
+                + COLUMN_ORDER_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                + COLUMN_STATUS + " TEXT DEFAULT 'Pending',"
+                + "FOREIGN KEY(" + COLUMN_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
+                + ")";
+        db.execSQL(CREATE_ORDERS_TABLE);
+
+        // Tạo bảng order_items
+        String CREATE_ORDER_ITEMS_TABLE = "CREATE TABLE " + TABLE_ORDER_ITEMS + "("
+                + COLUMN_ITEM_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_ORDER_ID + " INTEGER,"
+                + COLUMN_PRODUCT_ID + " INTEGER,"
+                + COLUMN_PRODUCT_NAME + " TEXT,"
+                + COLUMN_QUANTITY + " INTEGER,"
+                + COLUMN_PRICE + " REAL,"
+                + "FOREIGN KEY(" + COLUMN_ORDER_ID + ") REFERENCES " + TABLE_ORDERS + "(" + COLUMN_ORDER_ID + ")"
+                + ")";
+        db.execSQL(CREATE_ORDER_ITEMS_TABLE);
+
         // Thêm tài khoản admin mặc định
         ContentValues adminValues = new ContentValues();
         adminValues.put(COLUMN_EMAIL, "admin@gmail.com");
@@ -47,7 +91,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         adminValues.put(COLUMN_IS_ADMIN, 1);
         db.insert(TABLE_USERS, null, adminValues);
 
-        // Thêm một tài khoản user thông thường
+        // Thêm tài khoản user thông thường
         ContentValues userValues = new ContentValues();
         userValues.put(COLUMN_EMAIL, "user@gmail.com");
         userValues.put(COLUMN_PASSWORD, "user123");
@@ -58,7 +102,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Drop các bảng cũ nếu tồn tại
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
+        
+        // Tạo lại các bảng
         onCreate(db);
     }
 
@@ -221,5 +270,85 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         public String getEmail() { return email; }
         public String getName() { return name; }
         public boolean isAdmin() { return isAdmin; }
+    }
+
+    // Thêm đơn hàng mới
+    public long addOrder(String userId, double totalAmount) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USER_ID, userId);
+        values.put(COLUMN_TOTAL_AMOUNT, totalAmount);
+        values.put(COLUMN_STATUS, "Đã thanh toán");
+        return db.insert(TABLE_ORDERS, null, values);
+    }
+
+    // Lấy danh sách đơn hàng của user
+    public List<Order> getOrdersByUser(String userId) {
+        List<Order> orders = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String selectQuery = "SELECT * FROM " + TABLE_ORDERS 
+                + " WHERE " + COLUMN_USER_ID + " = ?"
+                + " ORDER BY " + COLUMN_ORDER_DATE + " DESC";
+
+        Cursor cursor = db.rawQuery(selectQuery, new String[]{userId});
+
+        if (cursor.moveToFirst()) {
+            do {
+                Order order = new Order();
+                order.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
+                order.setUserId(cursor.getString(cursor.getColumnIndex(COLUMN_USER_ID)));
+                order.setTotalAmount(cursor.getDouble(cursor.getColumnIndex(COLUMN_TOTAL_AMOUNT)));
+                order.setStatus(cursor.getString(cursor.getColumnIndex(COLUMN_STATUS)));
+                // Chuyển đổi timestamp thành Date
+                String dateStr = cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_DATE));
+                try {
+                    order.setOrderDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr));
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return orders;
+    }
+
+    // Thêm phương thức để lưu chi tiết đơn hàng
+    public long addOrderItem(int orderId, int productId, String productName, int quantity, double price) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_ORDER_ID, orderId);
+        values.put(COLUMN_PRODUCT_ID, productId);
+        values.put(COLUMN_PRODUCT_NAME, productName);
+        values.put(COLUMN_QUANTITY, quantity);
+        values.put(COLUMN_PRICE, price);
+        return db.insert(TABLE_ORDER_ITEMS, null, values);
+    }
+
+    // Sửa lại phương thức getOrderItems để sử dụng COLUMN_ORDER_ID thay vì id
+    public List<OrderItem> getOrderItems(int orderId) {
+        List<OrderItem> items = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String selectQuery = "SELECT * FROM " + TABLE_ORDER_ITEMS 
+                + " WHERE " + COLUMN_ORDER_ID + " = ?";
+
+        Cursor cursor = db.rawQuery(selectQuery, new String[]{String.valueOf(orderId)});
+
+        if (cursor.moveToFirst()) {
+            do {
+                OrderItem item = new OrderItem();
+                item.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ITEM_ID)));
+                item.setOrderId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
+                item.setProductId(cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID)));
+                item.setProductName(cursor.getString(cursor.getColumnIndex(COLUMN_PRODUCT_NAME)));
+                item.setQuantity(cursor.getInt(cursor.getColumnIndex(COLUMN_QUANTITY)));
+                item.setPrice(cursor.getDouble(cursor.getColumnIndex(COLUMN_PRICE)));
+                items.add(item);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return items;
     }
 } 

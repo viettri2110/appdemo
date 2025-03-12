@@ -12,8 +12,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 import android.widget.LinearLayout;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.LinearLayoutManager;
 import com.example.appdemo.database.DatabaseHelper;
 import com.example.appdemo.R;
+import com.example.appdemo.Adapter.RecentOrdersAdapter;
+import com.example.appdemo.Model.Order;
+
+import java.util.List;
 
 public class ProfileActivity extends AppCompatActivity {
     private TextView txtUsername, txtEmail;
@@ -25,6 +30,7 @@ public class ProfileActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private DatabaseHelper dbHelper;
     private Button btnEditProfile;
+    private RecentOrdersAdapter recentOrdersAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,8 +105,13 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void openOrderHistory() {
-        Intent intent = new Intent(this, OrderHistoryActivity.class);
-        startActivity(intent);
+        try {
+            Intent intent = new Intent(this, OrderHistoryActivity.class);
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Không thể mở lịch sử đơn hàng", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openReviews() {
@@ -129,10 +140,19 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void setupRecentOrders() {
+        String userId = sharedPreferences.getString("email", "");
+        List<Order> recentOrders = dbHelper.getOrdersByUser(userId);
+        
+        recentOrdersAdapter = new RecentOrdersAdapter(this, recentOrders);
+        recyclerRecentOrders.setLayoutManager(new LinearLayoutManager(this));
+        recyclerRecentOrders.setAdapter(recentOrdersAdapter);
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
-        // Cập nhật thông tin user khi quay lại từ EditProfileActivity
         loadUserData();
+        setupRecentOrders(); // Cập nhật danh sách đơn hàng khi quay lại màn hình
     }
 } 

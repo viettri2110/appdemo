@@ -82,6 +82,15 @@ public class ProfileActivity extends AppCompatActivity {
         // Hiển thị admin controls và nút quản lý người dùng
         adminControlsCard.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
         btnUserManagement.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+
+        if (isAdmin) {
+            // Thêm nút quản lý chat
+            Button btnManageChats = findViewById(R.id.btnManageChats);
+            btnManageChats.setVisibility(View.VISIBLE);
+            btnManageChats.setOnClickListener(v -> 
+                startActivity(new Intent(this, AdminChatListActivity.class))
+            );
+        }
     }
 
     private void logout() {

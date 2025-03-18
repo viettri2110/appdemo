@@ -14,10 +14,12 @@ import java.text.ParseException;
 
 import com.example.appdemo.Model.Order;
 import com.example.appdemo.Model.OrderItem;
+import com.example.appdemo.Model.Message;
+import com.example.appdemo.Model.ChatPreview;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 4;
+    private static final int DATABASE_VERSION = 5;
 
     // Bảng Users
     private static final String TABLE_USERS = "users";
@@ -41,6 +43,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_PRODUCT_NAME = "product_name";
     private static final String COLUMN_QUANTITY = "quantity";
     private static final String COLUMN_PRICE = "price";
+
+    // Thêm các hằng số cho bảng messages
+    private static final String TABLE_MESSAGES = "messages";
+    private static final String COLUMN_MESSAGE_ID = "message_id";
+    private static final String COLUMN_SENDER_EMAIL = "sender_email";
+    private static final String COLUMN_MESSAGE_CONTENT = "content";
+    private static final String COLUMN_TIMESTAMP = "timestamp";
+    private static final String COLUMN_IS_FROM_ADMIN = "is_from_admin";
 
     private Context context;
 
@@ -83,6 +93,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_ORDER_ITEMS_TABLE);
 
+        // Tạo bảng messages
+        String CREATE_MESSAGES_TABLE = "CREATE TABLE " + TABLE_MESSAGES + "("
+                + COLUMN_MESSAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_SENDER_EMAIL + " TEXT,"
+                + COLUMN_MESSAGE_CONTENT + " TEXT,"
+                + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                + COLUMN_IS_FROM_ADMIN + " INTEGER DEFAULT 0,"
+                + "FOREIGN KEY(" + COLUMN_SENDER_EMAIL + ") REFERENCES " 
+                + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
+                + ")";
+        db.execSQL(CREATE_MESSAGES_TABLE);
+
         // Thêm tài khoản admin mặc định
         ContentValues adminValues = new ContentValues();
         adminValues.put(COLUMN_EMAIL, "admin@gmail.com");
@@ -102,13 +124,38 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Drop các bảng cũ nếu tồn tại
+        // Backup dữ liệu users hiện tại trước khi drop table
+        List<ContentValues> userBackup = new ArrayList<>();
+        if (oldVersion < 5) { // Thêm điều kiện kiểm tra version
+            Cursor cursor = db.query(TABLE_USERS, null, null, null, null, null, null);
+            if (cursor.moveToFirst()) {
+                do {
+                    ContentValues values = new ContentValues();
+                    values.put(COLUMN_EMAIL, cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL)));
+                    values.put(COLUMN_PASSWORD, cursor.getString(cursor.getColumnIndex(COLUMN_PASSWORD)));
+                    values.put(COLUMN_NAME, cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
+                    values.put(COLUMN_IS_ADMIN, cursor.getInt(cursor.getColumnIndex(COLUMN_IS_ADMIN)));
+                    userBackup.add(values);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        }
+
+        // Drop các bảng cũ
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
-        
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
+
         // Tạo lại các bảng
         onCreate(db);
+
+        // Khôi phục lại dữ liệu users
+        if (oldVersion < 5) {
+            for (ContentValues values : userBackup) {
+                db.insert(TABLE_USERS, null, values);
+            }
+        }
     }
 
     public long addUser(String email, String password, String name) {
@@ -350,5 +397,70 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return items;
+    }
+
+    // Thêm phương thức để lưu tin nhắn
+    public long saveMessage(String senderEmail, String content, boolean isFromAdmin) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_SENDER_EMAIL, senderEmail);
+        values.put(COLUMN_MESSAGE_CONTENT, content);
+        values.put(COLUMN_IS_FROM_ADMIN, isFromAdmin ? 1 : 0);
+        return db.insert(TABLE_MESSAGES, null, values);
+    }
+
+    // Lấy tin nhắn của một user
+    public List<Message> getMessagesForUser(String userEmail) {
+        List<Message> messages = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String selectQuery = "SELECT * FROM " + TABLE_MESSAGES 
+                + " WHERE " + COLUMN_SENDER_EMAIL + " = ? OR " 
+                + COLUMN_IS_FROM_ADMIN + " = 1"
+                + " ORDER BY " + COLUMN_TIMESTAMP + " ASC";
+                
+        Cursor cursor = db.rawQuery(selectQuery, new String[]{userEmail});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String content = cursor.getString(cursor.getColumnIndex(COLUMN_MESSAGE_CONTENT));
+                boolean isFromAdmin = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_FROM_ADMIN)) == 1;
+                messages.add(new Message(content, isFromAdmin));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return messages;
+    }
+
+    // Lấy tất cả tin nhắn cho admin
+    public List<ChatPreview> getAllChatsForAdmin() {
+        List<ChatPreview> chats = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String selectQuery = "SELECT DISTINCT " + COLUMN_SENDER_EMAIL + ", "
+                + "(SELECT " + COLUMN_MESSAGE_CONTENT 
+                + " FROM " + TABLE_MESSAGES + " m2"
+                + " WHERE m2." + COLUMN_SENDER_EMAIL + " = m1." + COLUMN_SENDER_EMAIL
+                + " ORDER BY " + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_message,"
+                + "(SELECT " + COLUMN_TIMESTAMP
+                + " FROM " + TABLE_MESSAGES + " m2"
+                + " WHERE m2." + COLUMN_SENDER_EMAIL + " = m1." + COLUMN_SENDER_EMAIL
+                + " ORDER BY " + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_time"
+                + " FROM " + TABLE_MESSAGES + " m1"
+                + " WHERE " + COLUMN_SENDER_EMAIL + " != 'admin'"
+                + " ORDER BY last_time DESC";
+                
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                String email = cursor.getString(0);
+                String lastMessage = cursor.getString(1);
+                String timestamp = cursor.getString(2);
+                chats.add(new ChatPreview(email, lastMessage, timestamp));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return chats;
     }
 } 

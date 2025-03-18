@@ -192,6 +192,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void initBottomNavigation() {
         LinearLayout homeBtn = findViewById(R.id.homeBtn);
+        LinearLayout favoriteBtn = findViewById(R.id.favoriteBtn);
+        LinearLayout chatBtn = findViewById(R.id.chatBtn);
         LinearLayout cartBtn = findViewById(R.id.cartBtn);
         LinearLayout profileBtn = findViewById(R.id.profileBtn);
 
@@ -202,6 +204,15 @@ public class MainActivity extends AppCompatActivity {
         homeBtn.setOnClickListener(view -> {
             refreshProductList();
         });
+
+        favoriteBtn.setOnClickListener(view -> {
+            // TODO: Implement favorite functionality
+            Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+        });
+
+        chatBtn.setOnClickListener(view ->
+                startActivity(new Intent(MainActivity.this, ChatActivity.class))
+        );
 
         cartBtn.setOnClickListener(view ->
                 startActivity(new Intent(MainActivity.this, CartActivity.class))

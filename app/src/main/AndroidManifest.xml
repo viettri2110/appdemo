@@ -64,6 +64,9 @@
         <activity
             android:name=".Activity.CategoryProductActivity"
             android:exported="false"/>
+        <activity
+            android:name=".Activity.ChatActivity"
+            android:exported="false"/>
     </application>
 
 </manifest>

@@ -3,8 +3,11 @@ package com.example.appdemo.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -32,6 +35,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Product> popularProducts;
     private ProductDatabaseHelper databaseHelper;
     private FloatingActionButton fabManageProducts;
+    private EditText searchEditText;
+    private List<Product> allProducts; // Lưu trữ toàn bộ danh sách sản phẩm
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,17 +47,20 @@ public class MainActivity extends AppCompatActivity {
         // Khởi tạo RecyclerView
         recyclerView = findViewById(R.id.view1);
         recyclerView.setLayoutManager(new GridLayoutManager(this, 2));
+        searchEditText = findViewById(R.id.editTextText3);
 
         // Khởi tạo databaseHelper
         databaseHelper = new ProductDatabaseHelper(this);
 
         // Lấy danh sách sản phẩm
-        popularProducts = databaseHelper.getAllProducts();
+        allProducts = databaseHelper.getAllProducts();
+        popularProducts = new ArrayList<>(allProducts);
 
         // Khởi tạo adapter với context và danh sách sản phẩm
         productAdapter = new ProductAdapter(this, popularProducts);
         recyclerView.setAdapter(productAdapter);
 
+        setupSearchView();
         initViews();
         checkAdminRights();
         initBottomNavigation();
@@ -102,6 +110,47 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setupSearchView() {
+        searchEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                filterProducts(s.toString());
+            }
+        });
+    }
+
+    private void filterProducts(String query) {
+        popularProducts.clear();
+        
+        if (query.isEmpty()) {
+            popularProducts.addAll(allProducts);
+        } else {
+            String lowerQuery = query.toLowerCase();
+            for (Product product : allProducts) {
+                // Tìm kiếm theo tên hoặc mô tả hoặc danh mục
+                if (product.getName().toLowerCase().contains(lowerQuery) ||
+                    (product.getDescription() != null && 
+                     product.getDescription().toLowerCase().contains(lowerQuery)) ||
+                    (product.getCategory() != null && 
+                     product.getCategory().toLowerCase().contains(lowerQuery))) {
+                    popularProducts.add(product);
+                }
+            }
+        }
+        
+        if (popularProducts.isEmpty()) {
+            Toast.makeText(this, "Không tìm thấy sản phẩm phù hợp", Toast.LENGTH_SHORT).show();
+        }
+        
+        productAdapter.notifyDataSetChanged();
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
@@ -111,10 +160,16 @@ public class MainActivity extends AppCompatActivity {
 
     private void refreshProductList() {
         if (popularProducts != null && productAdapter != null) {
+            allProducts = databaseHelper.getAllProducts();
             popularProducts.clear();
-            popularProducts.addAll(databaseHelper.getAllProducts());
-            Log.d("MainActivity", "Loaded products: " + popularProducts.toString());
+            popularProducts.addAll(allProducts);
             productAdapter.notifyDataSetChanged();
+            
+            // Reset search view
+            if (searchEditText != null) {
+                searchEditText.setText("");
+                searchEditText.clearFocus();
+            }
         }
     }
 

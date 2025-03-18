@@ -45,7 +45,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         CartItem item = cartItems.get(position);
         
         holder.txtProductName.setText(item.getProductName());
-        holder.txtPrice.setText(String.format(Locale.US, "$%.2f", item.getPrice()));
+        holder.txtPrice.setText(String.format("%,.0f VNĐ", item.getPrice()));
         holder.txtQuantity.setText(String.valueOf(item.getQuantity()));
         
 

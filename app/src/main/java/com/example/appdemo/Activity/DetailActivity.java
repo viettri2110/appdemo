@@ -54,7 +54,7 @@ public class DetailActivity extends AppCompatActivity {
 
         if (currentProduct != null) {
             titleTxt.setText(currentProduct.getName());
-            priceTxt.setText(String.format("$%.2f", currentProduct.getPrice()));
+            priceTxt.setText(String.format("%,.0f VNĐ", currentProduct.getPrice()));
             descriptionTxt.setText(currentProduct.getDescription());
 
             // Tải hình ảnh sản phẩm

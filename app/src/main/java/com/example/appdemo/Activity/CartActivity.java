@@ -56,17 +56,17 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
 
     private void calculateCart() {
         double percentTax = 0.02;
-        double delivery = 10;
+        double delivery = 30000; // Đổi thành 30,000 VNĐ
         
         double itemTotal = Math.round(cartManager.getTotal() * 100.0) / 100.0;
         tax = Math.round((itemTotal * percentTax) * 100.0) / 100.0;
         double total = Math.round((itemTotal + tax + delivery) * 100.0) / 100.0;
 
-        totalFeeTxt.setText(String.format("$%.2f", itemTotal));
-        taxTxt.setText(String.format("$%.2f", tax));
-        deliveryTxt.setText(String.format("$%.2f", delivery));
-        totalTxt.setText(String.format("$%.2f", total));
-        txtTotal.setText(String.format("$%.2f", total));
+        totalFeeTxt.setText(String.format("%,.0f VNĐ", itemTotal));
+        taxTxt.setText(String.format("%,.0f VNĐ", tax));
+        deliveryTxt.setText(String.format("%,.0f VNĐ", delivery));
+        totalTxt.setText(String.format("%,.0f VNĐ", total));
+        txtTotal.setText(String.format("%,.0f VNĐ", total));
     }
 
     private void initViews() {

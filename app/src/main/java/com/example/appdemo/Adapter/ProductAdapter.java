@@ -49,7 +49,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
         Product product = products.get(position);
 
         holder.titleTxt.setText(product.getName());
-        holder.feeTxt.setText(String.format("$%.2f", product.getPrice()));
+        holder.feeTxt.setText(String.format("%,.0f VNĐ", product.getPrice()));
         holder.scoreTxt.setText("0");
 
         if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {

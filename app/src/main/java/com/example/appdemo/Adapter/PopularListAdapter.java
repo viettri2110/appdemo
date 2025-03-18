@@ -41,7 +41,7 @@ public class PopularListAdapter extends RecyclerView.Adapter<PopularListAdapter.
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Product item = items.get(position);
         holder.titleTxt.setText(item.getName());
-        holder.feeTxt.setText(String.format("%.0f VND", item.getPrice()));
+        holder.feeTxt.setText(String.format("%,.0f VNĐ", item.getPrice()));
         holder.ScoreTxt.setText("4.5"); // Default score for now
 
         // Load image from path or resource

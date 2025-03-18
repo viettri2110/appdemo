@@ -179,16 +179,20 @@
                 android:orientation="horizontal">
 
                 <LinearLayout
+                    android:id="@+id/laptopCategory"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/laptopCategoryBtn"
                         android:layout_width="55dp"
                         android:layout_height="55dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/btn_cat">
+                        android:background="@drawable/category_button_background"
+                        android:clickable="true"
+                        android:focusable="true">
 
                         <ImageView
                             android:id="@+id/imageView8"
@@ -212,16 +216,20 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/phoneCategory"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/phoneCategoryBtn"
                         android:layout_width="55dp"
                         android:layout_height="55dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/btn_cat">
+                        android:background="@drawable/category_button_background"
+                        android:clickable="true"
+                        android:focusable="true">
 
                         <ImageView
                             android:id="@+id/imageView8"
@@ -245,16 +253,20 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/headphoneCategory"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/headphoneCategoryBtn"
                         android:layout_width="55dp"
                         android:layout_height="55dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/btn_cat">
+                        android:background="@drawable/category_button_background"
+                        android:clickable="true"
+                        android:focusable="true">
 
                         <ImageView
                             android:id="@+id/imageView8"
@@ -279,16 +291,20 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/gamingCategory"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/gamingCategoryBtn"
                         android:layout_width="55dp"
                         android:layout_height="55dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/btn_cat">
+                        android:background="@drawable/category_button_background"
+                        android:clickable="true"
+                        android:focusable="true">
 
                         <ImageView
                             android:id="@+id/imageView8"
@@ -312,16 +328,20 @@
                 </LinearLayout>
 
                 <LinearLayout
+                    android:id="@+id/viewAllCategory"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
                     android:layout_weight="0.2"
                     android:orientation="vertical">
 
                     <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/viewAllCategoryBtn"
                         android:layout_width="55dp"
                         android:layout_height="55dp"
                         android:layout_gravity="center"
-                        android:background="@drawable/btn_cat">
+                        android:background="@drawable/category_button_background"
+                        android:clickable="true"
+                        android:focusable="true">
 
                         <ImageView
                             android:id="@+id/imageView8"

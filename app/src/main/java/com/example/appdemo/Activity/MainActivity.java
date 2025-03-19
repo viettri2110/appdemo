@@ -124,7 +124,37 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                filterProducts(s.toString());
+                String searchText = s.toString().toLowerCase().trim();
+                List<Product> filteredList = new ArrayList<>();
+
+                // Lọc sản phẩm theo tên hoặc mô tả
+                for (Product product : allProducts) {
+                    if (product.getName().toLowerCase().contains(searchText) ||
+                        (product.getDescription() != null && 
+                         product.getDescription().toLowerCase().contains(searchText)) ||
+                        (product.getCategory() != null && 
+                         product.getCategory().toLowerCase().contains(searchText))) {
+                        filteredList.add(product);
+                    }
+                }
+
+                // Cập nhật adapter với danh sách đã lọc
+                productAdapter = new ProductAdapter(MainActivity.this, filteredList);
+                recyclerView.setAdapter(productAdapter);
+                
+                // Thêm click listener cho các sản phẩm đã lọc
+                productAdapter.setOnItemClickListener(product -> {
+                    Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+                    intent.putExtra("product", product);
+                    startActivity(intent);
+                });
+
+                // Hiển thị thông báo nếu không tìm thấy sản phẩm
+                if (filteredList.isEmpty() && !searchText.isEmpty()) {
+                    Toast.makeText(MainActivity.this, 
+                        "Không tìm thấy sản phẩm phù hợp", 
+                        Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
@@ -141,32 +171,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void filterProducts(String query) {
-        popularProducts.clear();
-        
-        if (query.isEmpty()) {
-            // Khi xóa query, hiển thị lại 10 sản phẩm đắt nhất
-            loadPopularProducts();
-        } else {
-            String lowerQuery = query.toLowerCase();
-            for (Product product : allProducts) {
-                if (product.getName().toLowerCase().contains(lowerQuery) ||
-                    (product.getDescription() != null && 
-                     product.getDescription().toLowerCase().contains(lowerQuery)) ||
-                    (product.getCategory() != null && 
-                     product.getCategory().toLowerCase().contains(lowerQuery))) {
-                    popularProducts.add(product);
-                }
-            }
-        }
-        
-        if (popularProducts.isEmpty()) {
-            Toast.makeText(this, "Không tìm thấy sản phẩm phù hợp", Toast.LENGTH_SHORT).show();
-        }
-        
-        productAdapter.notifyDataSetChanged();
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
@@ -180,7 +184,7 @@ public class MainActivity extends AppCompatActivity {
             
             // Nếu đang ở chế độ tìm kiếm, giữ nguyên kết quả tìm kiếm
             if (searchEditText != null && !searchEditText.getText().toString().isEmpty()) {
-                filterProducts(searchEditText.getText().toString());
+                setupSearchView();
             } else {
                 // Ngược lại, load lại danh sách popular products
                 loadPopularProducts();

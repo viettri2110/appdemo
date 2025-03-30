@@ -10,6 +10,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -46,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     private ViewPager2 viewPagerBanner;
     private Handler bannerHandler;
     private Runnable bannerRunnable;
+    private TextView welcomeText;
+    private TextView nameText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +79,7 @@ public class MainActivity extends AppCompatActivity {
         setupListeners();
         setupCategories();
         setupBanner();
+        displayUserName();
     }
 
     private void initViews() {
@@ -86,6 +90,10 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
         fabManageProducts.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+
+        // Thêm các TextView
+        welcomeText = findViewById(R.id.textView);
+        nameText = findViewById(R.id.textView2);
     }
 
     private void checkAdminRights() {
@@ -290,6 +298,21 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         bannerHandler.postDelayed(bannerRunnable, 3000);
+    }
+
+    private void displayUserName() {
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String email = sharedPreferences.getString("email", "");
+        
+        // Lấy tên người dùng từ database
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        String userName = dbHelper.getUserName(email);
+        
+        if (userName != null && !userName.isEmpty()) {
+            nameText.setText(userName);
+        } else {
+            nameText.setText("Guest");
+        }
     }
 
     @Override

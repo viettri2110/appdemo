@@ -16,6 +16,7 @@ import com.example.appdemo.Model.Order;
 import com.example.appdemo.Model.OrderItem;
 import com.example.appdemo.Model.Message;
 import com.example.appdemo.Model.ChatPreview;
+import com.example.appdemo.Model.Banner;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
@@ -51,6 +52,12 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_MESSAGE_CONTENT = "content";
     private static final String COLUMN_TIMESTAMP = "timestamp";
     private static final String COLUMN_IS_FROM_ADMIN = "is_from_admin";
+
+    // Thêm bảng banners
+    private static final String TABLE_BANNERS = "banners";
+    private static final String COLUMN_BANNER_ID = "id";
+    private static final String COLUMN_BANNER_IMAGE = "image_url";
+    private static final String COLUMN_BANNER_TEXT = "text";
 
     private Context context;
 
@@ -105,6 +112,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_MESSAGES_TABLE);
 
+        // Tạo bảng banners
+        String CREATE_BANNERS_TABLE = "CREATE TABLE " + TABLE_BANNERS + "("
+                + COLUMN_BANNER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_BANNER_IMAGE + " TEXT,"
+                + COLUMN_BANNER_TEXT + " TEXT"
+                + ")";
+        db.execSQL(CREATE_BANNERS_TABLE);
+
         // Thêm tài khoản admin mặc định
         ContentValues adminValues = new ContentValues();
         adminValues.put(COLUMN_EMAIL, "admin@gmail.com");
@@ -146,6 +161,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_BANNERS);
 
         // Tạo lại các bảng
         onCreate(db);
@@ -462,5 +478,40 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
         return chats;
+    }
+
+    // Thêm phương thức quản lý banner
+    public long addBanner(String imageUrl, String text) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_BANNER_IMAGE, imageUrl);
+        values.put(COLUMN_BANNER_TEXT, text);
+        return db.insert(TABLE_BANNERS, null, values);
+    }
+
+    public List<Banner> getAllBanners() {
+        List<Banner> banners = new ArrayList<>();
+        String selectQuery = "SELECT * FROM " + TABLE_BANNERS;
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Banner banner = new Banner(
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_BANNER_ID)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_IMAGE)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_TEXT))
+                );
+                banners.add(banner);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return banners;
+    }
+
+    public void deleteBanner(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_BANNERS, COLUMN_BANNER_ID + " = ?",
+                new String[]{String.valueOf(id)});
     }
 } 

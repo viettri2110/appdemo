@@ -70,9 +70,7 @@
         <activity
             android:name=".Activity.AdminChatListActivity"
             android:exported="false"/>
-        <activity
-            android:name=".Activity.BannerManagementActivity"
-            android:exported="false"/>
+
     </application>
 
 </manifest>

@@ -17,10 +17,11 @@ import com.example.appdemo.Model.OrderItem;
 import com.example.appdemo.Model.Message;
 import com.example.appdemo.Model.ChatPreview;
 import com.example.appdemo.Model.Banner;
+import com.example.appdemo.Model.Product;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 6;
 
     // Bảng Users
     private static final String TABLE_USERS = "users";
@@ -58,6 +59,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_BANNER_ID = "id";
     private static final String COLUMN_BANNER_IMAGE = "image_url";
     private static final String COLUMN_BANNER_TEXT = "text";
+
+    // Thêm bảng favorites
+    private static final String TABLE_FAVORITES = "favorites";
+    private static final String COLUMN_USER_EMAIL = "user_email";
 
     private Context context;
 
@@ -120,6 +125,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_BANNERS_TABLE);
 
+        // Tạo bảng favorites
+        String CREATE_FAVORITES_TABLE = "CREATE TABLE " + TABLE_FAVORITES + "("
+                + COLUMN_USER_EMAIL + " TEXT,"
+                + COLUMN_PRODUCT_ID + " INTEGER,"
+                + "PRIMARY KEY (" + COLUMN_USER_EMAIL + ", " + COLUMN_PRODUCT_ID + ")"
+                + ")";
+        db.execSQL(CREATE_FAVORITES_TABLE);
+
         // Thêm tài khoản admin mặc định
         ContentValues adminValues = new ContentValues();
         adminValues.put(COLUMN_EMAIL, "admin@gmail.com");
@@ -162,6 +175,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_BANNERS);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_FAVORITES);
 
         // Tạo lại các bảng
         onCreate(db);
@@ -513,5 +527,61 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_BANNERS, COLUMN_BANNER_ID + " = ?",
                 new String[]{String.valueOf(id)});
+    }
+
+    // Thêm các phương thức quản lý favorites
+    public void addToFavorites(String userEmail, int productId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USER_EMAIL, userEmail);
+        values.put(COLUMN_PRODUCT_ID, productId);
+        db.insert(TABLE_FAVORITES, null, values);
+    }
+
+    public void removeFromFavorites(String userEmail, int productId) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete(TABLE_FAVORITES, 
+            COLUMN_USER_EMAIL + "=? AND " + COLUMN_PRODUCT_ID + "=?",
+            new String[]{userEmail, String.valueOf(productId)});
+    }
+
+    public boolean isFavorite(String userEmail, int productId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_FAVORITES,
+            null,
+            COLUMN_USER_EMAIL + "=? AND " + COLUMN_PRODUCT_ID + "=?",
+            new String[]{userEmail, String.valueOf(productId)},
+            null, null, null);
+        boolean isFavorite = cursor.getCount() > 0;
+        cursor.close();
+        return isFavorite;
+    }
+
+    public List<Product> getFavoriteProducts(String userEmail) {
+        List<Product> favorites = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        
+        String query = "SELECT p.* FROM " + ProductDatabaseHelper.getTableName() + " p "
+                + "INNER JOIN " + TABLE_FAVORITES + " f "
+                + "ON p." + ProductDatabaseHelper.getColumnId() + " = f." + COLUMN_PRODUCT_ID
+                + " WHERE f." + COLUMN_USER_EMAIL + " = ?";
+                
+        Cursor cursor = db.rawQuery(query, new String[]{userEmail});
+        
+        if (cursor.moveToFirst()) {
+            do {
+                Product product = new Product(
+                    cursor.getInt(cursor.getColumnIndex(ProductDatabaseHelper.getColumnId())),
+                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnName())),
+                    cursor.getDouble(cursor.getColumnIndex(ProductDatabaseHelper.getColumnPrice())),
+                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnDescription())),
+                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnImageUrl())),
+                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnCategory()))
+                );
+                favorites.add(product);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return favorites;
     }
 } 

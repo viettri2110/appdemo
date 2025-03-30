@@ -3,6 +3,7 @@ package com.example.appdemo.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -15,9 +16,11 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.appdemo.Adapter.ProductAdapter;
 import com.example.appdemo.Adapter.PopularListAdapter;
+import com.example.appdemo.Adapter.BannerAdapter;
 import com.example.appdemo.database.ProductDatabaseHelper;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
@@ -40,6 +43,9 @@ public class MainActivity extends AppCompatActivity {
     private List<Product> allProducts; // Lưu trữ toàn bộ danh sách sản phẩm
     private LinearLayout laptopCategory, phoneCategory, headphoneCategory, gamingCategory, viewAllCategory;
     private static final int POPULAR_PRODUCT_LIMIT = 10;
+    private ViewPager2 viewPagerBanner;
+    private Handler bannerHandler;
+    private Runnable bannerRunnable;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
         initBottomNavigation();
         setupListeners();
         setupCategories();
+        setupBanner();
     }
 
     private void initViews() {
@@ -265,5 +272,31 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(this, CategoryProductActivity.class);
         intent.putExtra("category", category);
         startActivity(intent);
+    }
+
+    private void setupBanner() {
+        viewPagerBanner = findViewById(R.id.viewPagerBanner);
+        BannerAdapter bannerAdapter = new BannerAdapter();
+        viewPagerBanner.setAdapter(bannerAdapter);
+
+        // Auto scroll banner
+        bannerHandler = new Handler();
+        bannerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                int currentItem = viewPagerBanner.getCurrentItem();
+                viewPagerBanner.setCurrentItem(currentItem + 1);
+                bannerHandler.postDelayed(this, 3000); // Chuyển banner sau mỗi 3 giây
+            }
+        };
+        bannerHandler.postDelayed(bannerRunnable, 3000);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (bannerHandler != null && bannerRunnable != null) {
+            bannerHandler.removeCallbacks(bannerRunnable);
+        }
     }
 }

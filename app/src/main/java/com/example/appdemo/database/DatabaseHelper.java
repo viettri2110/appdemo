@@ -6,6 +6,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.content.SharedPreferences;
+import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +19,7 @@ import com.example.appdemo.Model.Message;
 import com.example.appdemo.Model.ChatPreview;
 import com.example.appdemo.Model.Banner;
 import com.example.appdemo.Model.Product;
+import com.example.appdemo.database.ProductDatabaseHelper;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
@@ -532,17 +534,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Thêm các phương thức quản lý favorites
     public void addToFavorites(String userEmail, int productId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_USER_EMAIL, userEmail);
-        values.put(COLUMN_PRODUCT_ID, productId);
-        db.insert(TABLE_FAVORITES, null, values);
+        
+        // Kiểm tra xem sản phẩm có tồn tại trong bảng products không
+        ProductDatabaseHelper productDb = new ProductDatabaseHelper(context);
+        Product product = productDb.getProduct(productId);
+        
+        if (product != null) {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_USER_EMAIL, userEmail);
+            values.put(COLUMN_PRODUCT_ID, productId);
+            
+            long result = db.insert(TABLE_FAVORITES, null, values);
+            Log.d("DatabaseHelper", "Added to favorites - Email: " + userEmail + 
+                  ", ProductID: " + productId + ", Result: " + result);
+        } else {
+            Log.e("DatabaseHelper", "Cannot add to favorites - Product not found: " + productId);
+        }
     }
 
     public void removeFromFavorites(String userEmail, int productId) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete(TABLE_FAVORITES, 
+        int result = db.delete(TABLE_FAVORITES, 
             COLUMN_USER_EMAIL + "=? AND " + COLUMN_PRODUCT_ID + "=?",
             new String[]{userEmail, String.valueOf(productId)});
+        Log.d("DatabaseHelper", "Removing from favorites - Email: " + userEmail + ", ProductID: " + productId + ", Result: " + result);
     }
 
     public boolean isFavorite(String userEmail, int productId) {
@@ -559,29 +574,53 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     public List<Product> getFavoriteProducts(String userEmail) {
         List<Product> favorites = new ArrayList<>();
+        
+        // Lấy danh sách product_id từ bảng favorites
         SQLiteDatabase db = this.getReadableDatabase();
+        String favQuery = "SELECT " + COLUMN_PRODUCT_ID + " FROM " + TABLE_FAVORITES + 
+                         " WHERE " + COLUMN_USER_EMAIL + " = ?";
         
-        String query = "SELECT p.* FROM " + ProductDatabaseHelper.getTableName() + " p "
-                + "INNER JOIN " + TABLE_FAVORITES + " f "
-                + "ON p." + ProductDatabaseHelper.getColumnId() + " = f." + COLUMN_PRODUCT_ID
-                + " WHERE f." + COLUMN_USER_EMAIL + " = ?";
+        Cursor favCursor = db.rawQuery(favQuery, new String[]{userEmail});
+        Log.d("DatabaseHelper", "Found " + favCursor.getCount() + " favorites for user: " + userEmail);
+        
+        // Nếu có sản phẩm yêu thích
+        if (favCursor.moveToFirst()) {
+            // Tạo ProductDatabaseHelper để truy cập bảng products
+            ProductDatabaseHelper productDb = new ProductDatabaseHelper(context);
+            
+            do {
+                int productId = favCursor.getInt(favCursor.getColumnIndex(COLUMN_PRODUCT_ID));
+                Log.d("DatabaseHelper", "Getting product with ID: " + productId);
                 
-        Cursor cursor = db.rawQuery(query, new String[]{userEmail});
+                // Lấy thông tin sản phẩm từ ProductDatabaseHelper
+                Product product = productDb.getProduct(productId);
+                if (product != null) {
+                    favorites.add(product);
+                    Log.d("DatabaseHelper", "Added product to favorites: " + product.getName());
+                } else {
+                    Log.e("DatabaseHelper", "Product not found with ID: " + productId);
+                }
+            } while (favCursor.moveToNext());
+        }
         
+        favCursor.close();
+        Log.d("DatabaseHelper", "Returning " + favorites.size() + " favorite products");
+        return favorites;
+    }
+
+    // Thêm phương thức để kiểm tra bảng favorites
+    public void checkFavoritesTable() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String query = "SELECT * FROM " + TABLE_FAVORITES;
+        Cursor cursor = db.rawQuery(query, null);
+        Log.d("DatabaseHelper", "Total favorites in table: " + cursor.getCount());
         if (cursor.moveToFirst()) {
             do {
-                Product product = new Product(
-                    cursor.getInt(cursor.getColumnIndex(ProductDatabaseHelper.getColumnId())),
-                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnName())),
-                    cursor.getDouble(cursor.getColumnIndex(ProductDatabaseHelper.getColumnPrice())),
-                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnDescription())),
-                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnImageUrl())),
-                    cursor.getString(cursor.getColumnIndex(ProductDatabaseHelper.getColumnCategory()))
-                );
-                favorites.add(product);
+                String email = cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL));
+                int productId = cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID));
+                Log.d("DatabaseHelper", "Favorite found - Email: " + email + ", ProductID: " + productId);
             } while (cursor.moveToNext());
         }
         cursor.close();
-        return favorites;
     }
 } 

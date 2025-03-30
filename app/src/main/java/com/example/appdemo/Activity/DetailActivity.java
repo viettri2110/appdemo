@@ -1,6 +1,7 @@
 package com.example.appdemo.Activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -8,21 +9,28 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatButton;
 
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
+import com.example.appdemo.database.DatabaseHelper;
 
 public class DetailActivity extends AppCompatActivity {
     private TextView titleTxt, priceTxt, descriptionTxt, numberOrderTxt;
     private ImageView productImg, plusBtn, minusBtn,backBtn;
-    private Button addToCartBtn;
+    private AppCompatButton addToCartBtn;
     private int numberOrder = 1;
     private CartManager cartManager;
     private Product currentProduct;
+    private ImageButton btnFavorite;
+    private DatabaseHelper dbHelper;
+    private boolean isFavorite;
+    private String userEmail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,6 +42,18 @@ public class DetailActivity extends AppCompatActivity {
         initView();
         getBundle();
         setupListeners();
+
+        btnFavorite = findViewById(R.id.btnFavorite);
+        dbHelper = new DatabaseHelper(this);
+        
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        userEmail = sharedPreferences.getString("email", "");
+        
+        // Kiểm tra trạng thái yêu thích
+        isFavorite = dbHelper.isFavorite(userEmail, currentProduct.getId());
+        updateFavoriteButton();
+        
+        btnFavorite.setOnClickListener(v -> toggleFavorite());
     }
 
     private void initView() {
@@ -94,6 +114,26 @@ public class DetailActivity extends AppCompatActivity {
                     Toast.LENGTH_SHORT).show();
             }
         });
+    }
+
+    private void toggleFavorite() {
+        if (isFavorite) {
+            dbHelper.removeFromFavorites(userEmail, currentProduct.getId());
+            Toast.makeText(this, "Đã xóa khỏi danh sách yêu thích", Toast.LENGTH_SHORT).show();
+            Log.d("DetailActivity", "Removed from favorites - Product: " + currentProduct.getName() + ", ID: " + currentProduct.getId());
+        } else {
+            dbHelper.addToFavorites(userEmail, currentProduct.getId());
+            Toast.makeText(this, "Đã thêm vào danh sách yêu thích", Toast.LENGTH_SHORT).show();
+            Log.d("DetailActivity", "Added to favorites - Product: " + currentProduct.getName() + ", ID: " + currentProduct.getId());
+        }
+        isFavorite = !isFavorite;
+        updateFavoriteButton();
+    }
+
+    private void updateFavoriteButton() {
+        btnFavorite.setImageResource(isFavorite ? 
+            R.drawable.ic_favorite : R.drawable.ic_favorite_border);
+        Log.d("DetailActivity", "Updated favorite button - isFavorite: " + isFavorite);
     }
 }
 

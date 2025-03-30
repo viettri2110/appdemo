@@ -226,7 +226,7 @@ public class MainActivity extends AppCompatActivity {
 
         favoriteBtn.setOnClickListener(view -> {
             // TODO: Implement favorite functionality
-            Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(MainActivity.this, FavoritesActivity.class));
         });
 
         chatBtn.setOnClickListener(view ->
@@ -294,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 int currentItem = viewPagerBanner.getCurrentItem();
                 viewPagerBanner.setCurrentItem(currentItem + 1);
-                bannerHandler.postDelayed(this, 3000); // Chuyển banner sau mỗi 3 giây
+                bannerHandler.postDelayed(this, 4000);
             }
         };
         bannerHandler.postDelayed(bannerRunnable, 3000);

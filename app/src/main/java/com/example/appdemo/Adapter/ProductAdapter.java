@@ -50,7 +50,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ViewHold
 
         holder.titleTxt.setText(product.getName());
         holder.feeTxt.setText(String.format("%,.0f VNĐ", product.getPrice()));
-        holder.scoreTxt.setText("0");
+        holder.scoreTxt.setText("5.0");
 
         if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
             Glide.with(context)

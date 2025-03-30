@@ -12,53 +12,55 @@
 
     <ImageView
         android:id="@+id/pic"
-        android:layout_width="175dp"
+        android:layout_width="165dp"
         android:layout_height="155dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@drawable/pic1" />
 
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout"
-        android:layout_width="55dp"
-        android:layout_height="22dp"
-        android:layout_marginTop="16dp"
+    <!-- Score Container -->
+
+    <LinearLayout
+        android:id="@+id/scoreContainer"
+        android:layout_width="40dp"
+        android:layout_height="24dp"
+        android:layout_margin="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
         android:background="@drawable/white_background"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
-
-        <ImageView
-            android:id="@+id/imageView10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/star" />
 
         <TextView
             android:id="@+id/scoreTxt"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="4.5"
+            android:layout_marginEnd="2dp"
+            android:text="5.0"
+            android:textAlignment="center"
             android:textColor="@color/black"
+            android:textSize="11sp"
+            android:textStyle="bold" />
 
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toStartOf="@+id/imageView10"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
-    </androidx.constraintlayout.widget.ConstraintLayout>
+        <ImageView
+            android:id="@+id/starIcon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_gravity="center_vertical"
+            app:srcCompat="@drawable/star" />
+
+    </LinearLayout>
 
     <View
         android:id="@+id/view5"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="80dp"
         android:background="@drawable/white_background2"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBottom_toBottomOf="parent"/>
 
     <TextView
         android:id="@+id/titleTxt"
@@ -100,4 +102,5 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/feeTxt"
         app:srcCompat="@drawable/review" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

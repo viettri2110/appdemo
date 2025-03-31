@@ -13,12 +13,20 @@ import android.widget.ImageButton;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.database.DatabaseHelper;
+import com.example.appdemo.Adapter.PopularListAdapter;
+import com.example.appdemo.database.ProductDatabaseHelper;
+import com.example.appdemo.utils.SpacingItemDecoration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class DetailActivity extends AppCompatActivity {
     private TextView titleTxt, priceTxt, descriptionTxt, numberOrderTxt;
@@ -31,6 +39,10 @@ public class DetailActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private boolean isFavorite;
     private String userEmail;
+    private RecyclerView relatedProductsRecyclerView;
+    private PopularListAdapter relatedProductsAdapter;
+    private List<Product> relatedProducts;
+    private ProductDatabaseHelper productDb;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +66,9 @@ public class DetailActivity extends AppCompatActivity {
         updateFavoriteButton();
         
         btnFavorite.setOnClickListener(v -> toggleFavorite());
+
+        // Khởi tạo RecyclerView cho sản phẩm liên quan
+        setupRelatedProducts();
     }
 
     private void initView() {
@@ -134,6 +149,42 @@ public class DetailActivity extends AppCompatActivity {
         btnFavorite.setImageResource(isFavorite ? 
             R.drawable.ic_favorite : R.drawable.ic_favorite_border);
         Log.d("DetailActivity", "Updated favorite button - isFavorite: " + isFavorite);
+    }
+
+    private void setupRelatedProducts() {
+        relatedProductsRecyclerView = findViewById(R.id.relatedProductsRecyclerView);
+        relatedProducts = new ArrayList<>();
+        productDb = new ProductDatabaseHelper(this);
+
+        // Lấy sản phẩm hiện tại từ currentProduct đã có
+        if (currentProduct != null) {
+            // Log để debug
+            Log.d("DetailActivity", "Current product category: " + currentProduct.getCategory());
+            
+            relatedProducts = productDb.getRelatedProducts(
+                currentProduct.getCategory(), 
+                currentProduct.getId()
+            );
+            
+            // Log số lượng sản phẩm liên quan
+            Log.d("DetailActivity", "Found " + relatedProducts.size() + " related products");
+        }
+
+        // Setup RecyclerView
+        relatedProductsAdapter = new PopularListAdapter(relatedProducts);
+        
+        // Hiển thị theo dạng ngang
+        LinearLayoutManager layoutManager = new LinearLayoutManager(
+            this, 
+            LinearLayoutManager.HORIZONTAL, 
+            false
+        );
+        relatedProductsRecyclerView.setLayoutManager(layoutManager);
+        relatedProductsRecyclerView.setAdapter(relatedProductsAdapter);
+
+        // Thêm khoảng cách giữa các item
+        int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.item_spacing);
+        relatedProductsRecyclerView.addItemDecoration(new SpacingItemDecoration(spacingInPixels));
     }
 }
 

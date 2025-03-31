@@ -740,33 +740,65 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Log.d("DatabaseHelper", "Getting reviews for user: " + userEmail);
 
-        String query = "SELECT r.*, p.name as product_name FROM " + TABLE_REVIEWS + " r " +
-                      "INNER JOIN " + TABLE_PRODUCTS + " p ON r." + COLUMN_PRODUCT_ID + " = p." + COLUMN_ID +
-                      " WHERE r." + COLUMN_USER_EMAIL + " = ? " +
-                      "ORDER BY r." + COLUMN_DATE + " DESC";
+        try {
+            // Kiểm tra bảng reviews có tồn tại không
+            Cursor tableCheck = db.rawQuery(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+                new String[]{TABLE_REVIEWS}
+            );
+            boolean tableExists = tableCheck.moveToFirst();
+            Log.d("DatabaseHelper", "Reviews table exists: " + tableExists);
+            tableCheck.close();
 
-        Cursor cursor = db.rawQuery(query, new String[]{userEmail});
-        Log.d("DatabaseHelper", "Found " + cursor.getCount() + " reviews");
+            // Lấy reviews mà không cần join với products
+            String query = "SELECT * FROM " + TABLE_REVIEWS + 
+                          " WHERE " + COLUMN_USER_EMAIL + " = ? " +
+                          " ORDER BY " + COLUMN_DATE + " DESC";
+            
+            Log.d("DatabaseHelper", "Query: " + query);
+            
+            Cursor cursor = db.rawQuery(query, new String[]{userEmail});
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " reviews");
 
-        if (cursor.moveToFirst()) {
-            do {
-                Review review = new Review(
-                    cursor.getInt(cursor.getColumnIndex(COLUMN_REVIEW_ID)),
-                    cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_NAME)),
-                    cursor.getFloat(cursor.getColumnIndex(COLUMN_RATING)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_DATE))
-                );
-                // Thêm tên sản phẩm vào review
-                review.setProductName(cursor.getString(cursor.getColumnIndex("product_name")));
-                reviews.add(review);
-                Log.d("DatabaseHelper", "Loaded review for product: " + review.getProductName());
-            } while (cursor.moveToNext());
+            if (cursor.moveToFirst()) {
+                ProductDatabaseHelper productDb = new ProductDatabaseHelper(context);
+                do {
+                    int productId = cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID));
+                    Review review = new Review(
+                        cursor.getInt(cursor.getColumnIndex(COLUMN_REVIEW_ID)),
+                        productId,
+                        cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_USER_NAME)),
+                        cursor.getFloat(cursor.getColumnIndex(COLUMN_RATING)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT)),
+                        cursor.getString(cursor.getColumnIndex(COLUMN_DATE))
+                    );
+
+                    // Lấy tên sản phẩm từ ProductDatabaseHelper
+                    Product product = productDb.getProduct(productId);
+                    if (product != null) {
+                        review.setProductName(product.getName());
+                    } else {
+                        review.setProductName("Sản phẩm không tồn tại");
+                    }
+
+                    reviews.add(review);
+                    Log.d("DatabaseHelper", String.format(
+                        "Added review - ID: %d, Product: %s, Rating: %.1f, Content: %s",
+                        review.getId(),
+                        review.getProductName(),
+                        review.getRating(),
+                        review.getContent()
+                    ));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting user reviews", e);
+            e.printStackTrace();
         }
-        cursor.close();
 
+        Log.d("DatabaseHelper", "Returning " + reviews.size() + " reviews");
         return reviews;
     }
 } 

@@ -17,8 +17,6 @@ import com.example.appdemo.database.DatabaseHelper;
 import com.example.appdemo.R;
 import com.example.appdemo.Adapter.RecentOrdersAdapter;
 import com.example.appdemo.Model.Order;
-import com.example.appdemo.Adapter.ReviewAdapter;
-import com.example.appdemo.Model.Review;
 import android.database.sqlite.SQLiteException;
 
 import java.util.List;
@@ -35,22 +33,19 @@ public class ProfileActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private Button btnEditProfile;
     private RecentOrdersAdapter recentOrdersAdapter;
-    private RecyclerView myReviewsRecyclerView;
-    private ReviewAdapter reviewAdapter;
-    private List<Review> myReviews;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
+        // Khởi tạo DatabaseHelper
         dbHelper = new DatabaseHelper(this);
+        
         initViews();
         setupListeners();
         loadUserData();
-
-        // Khởi tạo RecyclerView cho đánh giá
-        setupMyReviews();
+        setupRecentOrders();
     }
 
     private void initViews() {
@@ -72,7 +67,10 @@ public class ProfileActivity extends AppCompatActivity {
     private void setupListeners() {
         btnLogout.setOnClickListener(v -> logout());
         layoutOrders.setOnClickListener(v -> openOrderHistory());
-        layoutReviews.setOnClickListener(v -> openReviews());
+        layoutReviews.setOnClickListener(v -> {
+            Intent intent = new Intent(ProfileActivity.this, MyReviewsActivity.class);
+            startActivity(intent);
+        });
         btnEditProfile.setOnClickListener(v -> openEditProfile());
         layoutEdit.setOnClickListener(v -> openEditProfile());
         btnViewAllOrders.setOnClickListener(v -> openOrderHistory());
@@ -133,11 +131,6 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void openReviews() {
-        Intent intent = new Intent(this, ReviewsActivity.class);
-        startActivity(intent);
-    }
-
     private void openUserManagement() {
         try {
             Intent intent = new Intent(ProfileActivity.this, UserManagementActivity.class);
@@ -168,40 +161,10 @@ public class ProfileActivity extends AppCompatActivity {
         recyclerRecentOrders.setAdapter(recentOrdersAdapter);
     }
 
-    private void setupMyReviews() {
-        myReviewsRecyclerView = findViewById(R.id.myReviewsRecyclerView);
-        myReviews = new ArrayList<>();
-        reviewAdapter = new ReviewAdapter(myReviews);
-        myReviewsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        myReviewsRecyclerView.setAdapter(reviewAdapter);
-
-        // Load đánh giá của người dùng
-        loadMyReviews();
-    }
-
-    private void loadMyReviews() {
-        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        String userEmail = sharedPreferences.getString("email", "");
-
-        if (!userEmail.isEmpty()) {
-            try {
-                myReviews.clear();
-                myReviews.addAll(dbHelper.getUserReviews(userEmail));
-                reviewAdapter.notifyDataSetChanged();
-                
-                Log.d("ProfileActivity", "Loaded " + myReviews.size() + " reviews");
-            } catch (SQLiteException e) {
-                Log.e("ProfileActivity", "Error loading reviews: " + e.getMessage());
-                Toast.makeText(this, "Không thể tải đánh giá", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
         loadUserData();
-        setupRecentOrders(); // Cập nhật danh sách đơn hàng khi quay lại màn hình
-        loadMyReviews(); // Cập nhật lại danh sách đánh giá khi quay lại màn hình
+        setupRecentOrders(); // Chỉ cập nhật đơn hàng
     }
 } 

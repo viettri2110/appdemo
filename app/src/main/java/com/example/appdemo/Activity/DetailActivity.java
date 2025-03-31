@@ -10,6 +10,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ImageButton;
+import android.widget.RatingBar;
+import android.app.AlertDialog;
+import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
@@ -24,9 +27,15 @@ import com.example.appdemo.database.DatabaseHelper;
 import com.example.appdemo.Adapter.PopularListAdapter;
 import com.example.appdemo.database.ProductDatabaseHelper;
 import com.example.appdemo.utils.SpacingItemDecoration;
+import com.example.appdemo.Model.Review;
+import com.example.appdemo.Adapter.ReviewAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import android.database.sqlite.SQLiteException;
 
 public class DetailActivity extends AppCompatActivity {
     private TextView titleTxt, priceTxt, descriptionTxt, numberOrderTxt;
@@ -43,6 +52,12 @@ public class DetailActivity extends AppCompatActivity {
     private PopularListAdapter relatedProductsAdapter;
     private List<Product> relatedProducts;
     private ProductDatabaseHelper productDb;
+    private RecyclerView reviewsRecyclerView;
+    private ReviewAdapter reviewAdapter;
+    private List<Review> reviews;
+    private RatingBar ratingBar;
+    private TextView ratingCount;
+    private Button writeReviewBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,6 +84,9 @@ public class DetailActivity extends AppCompatActivity {
 
         // Khởi tạo RecyclerView cho sản phẩm liên quan
         setupRelatedProducts();
+
+        // Khởi tạo views cho phần review
+        setupReviews();
     }
 
     private void initView() {
@@ -185,6 +203,127 @@ public class DetailActivity extends AppCompatActivity {
         // Thêm khoảng cách giữa các item
         int spacingInPixels = getResources().getDimensionPixelSize(R.dimen.item_spacing);
         relatedProductsRecyclerView.addItemDecoration(new SpacingItemDecoration(spacingInPixels));
+    }
+
+    private void setupReviews() {
+        ratingBar = findViewById(R.id.ratingBar);
+        ratingCount = findViewById(R.id.ratingCount);
+        writeReviewBtn = findViewById(R.id.writeReviewBtn);
+        reviewsRecyclerView = findViewById(R.id.reviewsRecyclerView);
+
+        reviews = new ArrayList<>();
+        reviewAdapter = new ReviewAdapter(reviews);
+        reviewsRecyclerView.setAdapter(reviewAdapter);
+        reviewsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        // Load reviews từ database
+        loadReviews();
+
+        writeReviewBtn.setOnClickListener(v -> {
+            if (userEmail.isEmpty()) {
+                Toast.makeText(this, "Vui lòng đăng nhập để đánh giá", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            showReviewDialog();
+        });
+    }
+
+    private void loadReviews() {
+        // Xóa dữ liệu mẫu cũ
+        reviews.clear();
+        
+        // Load reviews từ database
+        if (currentProduct != null) {
+            try {
+                reviews.addAll(dbHelper.getProductReviews(currentProduct.getId()));
+                Log.d("DetailActivity", "Loaded " + reviews.size() + " reviews");
+            } catch (SQLiteException e) {
+                Log.e("DetailActivity", "Error loading reviews: " + e.getMessage());
+                Toast.makeText(this, "Không thể tải đánh giá", Toast.LENGTH_SHORT).show();
+            }
+        }
+        
+        reviewAdapter.notifyDataSetChanged();
+        updateRatingDisplay();
+    }
+
+    private void updateRatingDisplay() {
+        if (reviews.isEmpty()) {
+            ratingBar.setRating(0);
+            ratingCount.setText("(0 đánh giá)");
+            return;
+        }
+
+        float avgRating = 0;
+        for (Review review : reviews) {
+            avgRating += review.getRating();
+        }
+        avgRating /= reviews.size();
+
+        ratingBar.setRating(avgRating);
+        ratingCount.setText(String.format("(%d đánh giá)", reviews.size()));
+    }
+
+    private void showReviewDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        View dialogView = getLayoutInflater().inflate(R.layout.dialog_write_review, null);
+        builder.setView(dialogView);
+
+        RatingBar dialogRatingBar = dialogView.findViewById(R.id.dialogRatingBar);
+        EditText reviewContent = dialogView.findViewById(R.id.reviewContent);
+
+        AlertDialog dialog = builder.setTitle("Viết đánh giá")
+            .setPositiveButton("Gửi", null) // Set null để xử lý click riêng
+            .setNegativeButton("Hủy", null)
+            .create();
+
+        dialog.show();
+
+        // Xử lý nút Gửi
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            float rating = dialogRatingBar.getRating();
+            String content = reviewContent.getText().toString().trim();
+            
+            if (rating == 0) {
+                Toast.makeText(this, "Vui lòng chọn số sao", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            
+            if (content.isEmpty()) {
+                Toast.makeText(this, "Vui lòng nhập nội dung đánh giá", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Tạo review mới
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            String currentDate = sdf.format(new Date());
+            
+            Review newReview = new Review(
+                0, // ID sẽ được tự động tạo bởi SQLite
+                currentProduct.getId(),
+                userEmail,
+                getUserName(),
+                rating,
+                content,
+                currentDate
+            );
+
+            // Lưu vào database
+            long result = dbHelper.addReview(newReview);
+            if (result != -1) {
+                Toast.makeText(this, "Đã gửi đánh giá", Toast.LENGTH_SHORT).show();
+                dialog.dismiss();
+                // Cập nhật lại danh sách đánh giá
+                loadReviews();
+            } else {
+                Toast.makeText(this, "Không thể gửi đánh giá", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private String getUserName() {
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        return sharedPreferences.getString("name", "Người dùng");
     }
 }
 

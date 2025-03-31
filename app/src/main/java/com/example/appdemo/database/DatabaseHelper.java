@@ -20,10 +20,11 @@ import com.example.appdemo.Model.ChatPreview;
 import com.example.appdemo.Model.Banner;
 import com.example.appdemo.Model.Product;
 import com.example.appdemo.database.ProductDatabaseHelper;
+import com.example.appdemo.Model.Review;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 6;
+    private static final int DATABASE_VERSION = 7;
 
     // Bảng Users
     private static final String TABLE_USERS = "users";
@@ -65,6 +66,18 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     // Thêm bảng favorites
     private static final String TABLE_FAVORITES = "favorites";
     private static final String COLUMN_USER_EMAIL = "user_email";
+
+    // Thêm bảng reviews
+    private static final String TABLE_REVIEWS = "reviews";
+    private static final String COLUMN_REVIEW_ID = "review_id";
+    private static final String COLUMN_USER_NAME = "user_name";
+    private static final String COLUMN_RATING = "rating";
+    private static final String COLUMN_CONTENT = "content";
+    private static final String COLUMN_DATE = "date";
+
+    // Thêm tham chiếu đến bảng products
+    private static final String TABLE_PRODUCTS = "products";
+    private static final String COLUMN_ID = "id";
 
     private Context context;
 
@@ -135,6 +148,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_FAVORITES_TABLE);
 
+        ProductDatabaseHelper productDb = new ProductDatabaseHelper(context);
+        
+        // Tạo bảng reviews
+        String CREATE_REVIEWS_TABLE = "CREATE TABLE " + TABLE_REVIEWS + "("
+                + COLUMN_REVIEW_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_PRODUCT_ID + " INTEGER,"
+                + COLUMN_USER_EMAIL + " TEXT,"
+                + COLUMN_USER_NAME + " TEXT,"
+                + COLUMN_RATING + " FLOAT,"
+                + COLUMN_CONTENT + " TEXT,"
+                + COLUMN_DATE + " TEXT,"
+                + "FOREIGN KEY(" + COLUMN_PRODUCT_ID + ") REFERENCES " + productDb.getTableName() + "(" + ProductDatabaseHelper.getColumnId() + "),"
+                + "FOREIGN KEY(" + COLUMN_USER_EMAIL + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
+                + ")";
+        db.execSQL(CREATE_REVIEWS_TABLE);
+
         // Thêm tài khoản admin mặc định
         ContentValues adminValues = new ContentValues();
         adminValues.put(COLUMN_EMAIL, "admin@gmail.com");
@@ -156,7 +185,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Backup dữ liệu users hiện tại trước khi drop table
         List<ContentValues> userBackup = new ArrayList<>();
-        if (oldVersion < 5) { // Thêm điều kiện kiểm tra version
+        if (oldVersion < 5) {
             Cursor cursor = db.query(TABLE_USERS, null, null, null, null, null, null);
             if (cursor.moveToFirst()) {
                 do {
@@ -178,6 +207,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_BANNERS);
         db.execSQL("DROP TABLE IF EXISTS " + TABLE_FAVORITES);
+        db.execSQL("DROP TABLE IF EXISTS " + TABLE_REVIEWS);
 
         // Tạo lại các bảng
         onCreate(db);
@@ -645,5 +675,98 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         boolean exists = cursor.getCount() > 0;
         cursor.close();
         return exists;
+    }
+
+    // Thêm các phương thức để thao tác với reviews
+    public long addReview(Review review) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        
+        values.put(COLUMN_PRODUCT_ID, review.getProductId());
+        values.put(COLUMN_USER_EMAIL, review.getUserEmail());
+        values.put(COLUMN_USER_NAME, review.getUserName());
+        values.put(COLUMN_RATING, review.getRating());
+        values.put(COLUMN_CONTENT, review.getContent());
+        values.put(COLUMN_DATE, review.getDate());
+
+        // Thêm log để debug
+        Log.d("DatabaseHelper", "Adding review: " + 
+              "ProductID=" + review.getProductId() + 
+              ", UserEmail=" + review.getUserEmail() + 
+              ", Rating=" + review.getRating());
+
+        long result = db.insert(TABLE_REVIEWS, null, values);
+        Log.d("DatabaseHelper", "Add review result: " + result);
+        return result;
+    }
+
+    public List<Review> getProductReviews(int productId) {
+        List<Review> reviews = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        // Thêm log để debug
+        Log.d("DatabaseHelper", "Getting reviews for product: " + productId);
+
+        String query = "SELECT * FROM " + TABLE_REVIEWS + 
+                      " WHERE " + COLUMN_PRODUCT_ID + " = ? " +
+                      " ORDER BY " + COLUMN_DATE + " DESC";
+
+        Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(productId)});
+        Log.d("DatabaseHelper", "Found " + cursor.getCount() + " reviews");
+
+        if (cursor.moveToFirst()) {
+            do {
+                Review review = new Review(
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_REVIEW_ID)),
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_NAME)),
+                    cursor.getFloat(cursor.getColumnIndex(COLUMN_RATING)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_DATE))
+                );
+                reviews.add(review);
+                Log.d("DatabaseHelper", "Loaded review: " + review.getContent());
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+
+        return reviews;
+    }
+
+    public List<Review> getUserReviews(String userEmail) {
+        List<Review> reviews = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        Log.d("DatabaseHelper", "Getting reviews for user: " + userEmail);
+
+        String query = "SELECT r.*, p.name as product_name FROM " + TABLE_REVIEWS + " r " +
+                      "INNER JOIN " + TABLE_PRODUCTS + " p ON r." + COLUMN_PRODUCT_ID + " = p." + COLUMN_ID +
+                      " WHERE r." + COLUMN_USER_EMAIL + " = ? " +
+                      "ORDER BY r." + COLUMN_DATE + " DESC";
+
+        Cursor cursor = db.rawQuery(query, new String[]{userEmail});
+        Log.d("DatabaseHelper", "Found " + cursor.getCount() + " reviews");
+
+        if (cursor.moveToFirst()) {
+            do {
+                Review review = new Review(
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_REVIEW_ID)),
+                    cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_USER_NAME)),
+                    cursor.getFloat(cursor.getColumnIndex(COLUMN_RATING)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_CONTENT)),
+                    cursor.getString(cursor.getColumnIndex(COLUMN_DATE))
+                );
+                // Thêm tên sản phẩm vào review
+                review.setProductName(cursor.getString(cursor.getColumnIndex("product_name")));
+                reviews.add(review);
+                Log.d("DatabaseHelper", "Loaded review for product: " + review.getProductName());
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+
+        return reviews;
     }
 } 

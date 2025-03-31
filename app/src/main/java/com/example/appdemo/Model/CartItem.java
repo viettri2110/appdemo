@@ -3,32 +3,40 @@ package com.example.appdemo.Model;
 import java.io.Serializable;
 
 public class CartItem implements Serializable {
-    private String productName;
-    private double price;
+    private Product product;
     private int quantity;
-    private String imageUrl;
+
+    public CartItem(Product product, int quantity) {
+        this.product = product;
+        this.quantity = quantity;
+    }
 
     public CartItem(String productName, double price, int quantity, String imageUrl) {
-        this.productName = productName;
-        this.price = price;
+        this.product = new Product();
+        this.product.setName(productName);
+        this.product.setPrice(price);
+        this.product.setImageUrl(imageUrl);
         this.quantity = quantity;
-        this.imageUrl = imageUrl;
+    }
+
+    public Product getProduct() {
+        return product;
+    }
+
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public String getProductName() {
-        return productName;
-    }
-
-    public void setProductName(String productName) {
-        this.productName = productName;
+        return product.getName();
     }
 
     public double getPrice() {
-        return price;
+        return product.getPrice();
     }
 
-    public void setPrice(double price) {
-        this.price = price;
+    public String getImageUrl() {
+        return product.getImageUrl();
     }
 
     public int getQuantity() {
@@ -39,15 +47,7 @@ public class CartItem implements Serializable {
         this.quantity = quantity;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
-    }
-
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
     public double getTotalPrice() {
-        return price * quantity;
+        return product.getPrice() * quantity;
     }
 } 

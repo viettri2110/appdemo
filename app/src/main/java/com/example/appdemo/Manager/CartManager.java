@@ -82,6 +82,37 @@ public class CartManager {
         saveCartToStorage();
     }
 
+    public void addToCart(Product product, int quantity) {
+        // Kiểm tra sản phẩm đã có trong giỏ hàng chưa
+        CartItem existingItem = null;
+        for (CartItem item : cartItems) {
+            if (item.getProductName().equals(product.getName())) {
+                existingItem = item;
+                break;
+            }
+        }
+
+        if (existingItem != null) {
+            // Nếu sản phẩm đã có trong giỏ hàng, tăng số lượng
+            existingItem.setQuantity(existingItem.getQuantity() + quantity);
+            Log.d("CartManager", "Updated quantity for: " + product.getName() + 
+                  " to " + existingItem.getQuantity());
+        } else {
+            // Nếu sản phẩm chưa có trong giỏ hàng, thêm mới
+            CartItem newItem = new CartItem(
+                product.getName(),
+                product.getPrice(),
+                quantity,
+                product.getImageUrl()
+            );
+            cartItems.add(newItem);
+            Log.d("CartManager", "Added new item to cart: " + product.getName() + 
+                  " with quantity " + quantity);
+        }
+
+        saveCartToStorage();
+    }
+
     public List<CartItem> getCartItems() {
         // Log để debug
         Log.d("CartManager", "Getting cart items. Size: " + cartItems.size());
@@ -116,11 +147,20 @@ public class CartManager {
     }
 
     private void saveCartToStorage() {
-        // Save cart items to SharedPreferences or local database
-        // Implementation depends on your storage choice
+        // Implement saving cart to storage (SharedPreferences or SQLite)
+        Log.d("CartManager", "Saving cart with " + cartItems.size() + " items");
     }
 
     private void loadCartFromStorage() {
-        // Load cart items from storage when initializing
+        // Implement loading cart from storage
+        Log.d("CartManager", "Loading cart from storage");
+    }
+
+    private void saveCart() {
+        // Implementation of saving cart to storage
+    }
+
+    private void notifyCartChanged() {
+        // Implementation of notifying cart changed
     }
 } 

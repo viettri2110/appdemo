@@ -99,6 +99,9 @@ public class DetailActivity extends AppCompatActivity {
         plusBtn = findViewById(R.id.plusBtn);
         minusBtn = findViewById(R.id.minusBtn);
         addToCartBtn = findViewById(R.id.addToCartBtn);
+
+        // Khởi tạo số lượng mặc định là 1
+        numberOrderTxt.setText(String.valueOf(numberOrder));
     }
 
     private void getBundle() {
@@ -137,14 +140,18 @@ public class DetailActivity extends AppCompatActivity {
 
         addToCartBtn.setOnClickListener(v -> {
             if (currentProduct != null) {
-                // Thêm sản phẩm vào giỏ hàng với số lượng đã chọn
-                for (int i = 0; i < numberOrder; i++) {
-                    cartManager.addToCart(currentProduct);
+                try {
+                    // Thêm sản phẩm vào giỏ hàng với số lượng đã chọn
+                    cartManager.addToCart(currentProduct, numberOrder);
+                    Toast.makeText(DetailActivity.this, 
+                        "Đã thêm " + numberOrder + " sản phẩm vào giỏ hàng", 
+                        Toast.LENGTH_SHORT).show();
+                } catch (Exception e) {
+                    Log.e("DetailActivity", "Error adding to cart", e);
+                    Toast.makeText(DetailActivity.this, 
+                        "Lỗi: " + e.getMessage(), 
+                        Toast.LENGTH_SHORT).show();
                 }
-                
-                Toast.makeText(DetailActivity.this, 
-                    "Added " + numberOrder + " item(s) to cart", 
-                    Toast.LENGTH_SHORT).show();
             }
         });
     }

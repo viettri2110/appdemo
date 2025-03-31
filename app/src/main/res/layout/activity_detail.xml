@@ -85,23 +85,29 @@
                 android:id="@+id/titleTxt"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+
+                android:layout_marginEnd="8dp"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:layout_marginTop="8dp"
-                app:layout_constraintTop_toBottomOf="@id/productImg"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"/>
+                app:layout_constraintTop_toBottomOf="@id/productImg" />
 
             <TextView
                 android:id="@+id/priceTxt"
+
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textSize="20sp"
-                android:textColor="@color/red"
+                android:layout_marginStart="8dp"
                 android:layout_marginTop="4dp"
-                app:layout_constraintTop_toBottomOf="@id/titleTxt"
+                android:layout_marginEnd="8dp"
+                android:textColor="@color/red"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"/>
+                app:layout_constraintTop_toBottomOf="@id/titleTxt" />
 
             <TextView
                 android:id="@+id/descriptionTxt"
@@ -199,54 +205,75 @@
                 android:paddingEnd="8dp"
                 app:layout_constraintTop_toBottomOf="@id/relatedProductsTitle" />
 
-            <LinearLayout
-                android:id="@+id/quantityLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:layout_marginTop="16dp"
-                app:layout_constraintTop_toBottomOf="@id/relatedProductsRecyclerView">
-
-                <ImageView
-                    android:id="@+id/minusBtn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"
-                    android:src="@drawable/minus" />
-
-                <TextView
-                    android:id="@+id/numberOrderTxt"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginHorizontal="16dp"
-                    android:text="1"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-
-                <ImageView
-                    android:id="@+id/plusBtn"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:padding="8dp"
-                    android:src="@drawable/plus" />
-            </LinearLayout>
-
         </androidx.constraintlayout.widget.ConstraintLayout>
     </ScrollView>
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/addToCartBtn"
-        style="@android:style/Widget.Button"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
-        android:layout_margin="16dp"
-        android:background="@drawable/red_button_background"
-        android:text="Thêm vào giỏ hàng"
-        android:textColor="@color/white"
-        android:textSize="18sp" />
+        android:padding="16dp"
+        android:background="@color/white"
+        android:elevation="8dp">
+
+        <LinearLayout
+            android:id="@+id/quantityLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Số lượng:"
+                android:textSize="16sp"
+                android:layout_marginEnd="8dp"/>
+
+            <ImageView
+                android:id="@+id/minusBtn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/minus"
+                android:padding="4dp"
+                android:background="@drawable/grey_btn_background"/>
+
+            <TextView
+                android:id="@+id/numberOrderTxt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="1"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginHorizontal="12dp"/>
+
+            <ImageView
+                android:id="@+id/plusBtn"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:src="@drawable/plus"
+                android:padding="4dp"
+                android:background="@drawable/grey_btn_background"/>
+        </LinearLayout>
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/addToCartBtn"
+            style="@android:style/Widget.Button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:background="@drawable/red_button_background"
+            android:text="Thêm vào giỏ hàng"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@id/quantityLayout"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

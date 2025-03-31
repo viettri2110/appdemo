@@ -623,4 +623,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         }
         cursor.close();
     }
+
+    public void updatePassword(String email, String newPassword) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_PASSWORD, newPassword);
+        
+        db.update(TABLE_USERS, values, 
+            COLUMN_EMAIL + " = ?", 
+            new String[]{email});
+    }
+
+    public boolean checkUser(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_USERS,
+            new String[]{COLUMN_EMAIL},
+            COLUMN_EMAIL + "=?",
+            new String[]{email},
+            null, null, null);
+        
+        boolean exists = cursor.getCount() > 0;
+        cursor.close();
+        return exists;
+    }
 } 

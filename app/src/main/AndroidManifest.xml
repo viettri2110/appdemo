@@ -73,6 +73,9 @@
         <activity
             android:name=".Activity.FavoritesActivity"
             android:exported="false"/>
+        <activity
+            android:name=".Activity.ForgotPasswordActivity"
+            android:exported="false" />
 
     </application>
 

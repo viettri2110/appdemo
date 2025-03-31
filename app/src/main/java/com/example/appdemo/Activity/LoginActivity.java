@@ -18,7 +18,6 @@ public class LoginActivity extends AppCompatActivity {
     private static final int REGISTER_REQUEST_CODE = 100;
     private EditText edtEmail, edtPassword;
     private Button btnLogin, btnRegister;
-    private TextView txtForgotPassword;
     private DatabaseHelper databaseHelper;
     private ProgressDialog progressDialog;
 
@@ -43,8 +42,15 @@ public class LoginActivity extends AppCompatActivity {
         edtPassword = findViewById(R.id.edtPassword);
         btnLogin = findViewById(R.id.btnLogin);
         btnRegister = findViewById(R.id.btnRegister);
-        // txtForgotPassword có thể null nếu không có trong layout
-      //  txtForgotPassword = findViewById(R.id.txtForgotPassword);
+        
+        // Thêm forgot password text
+        TextView forgotPasswordText = findViewById(R.id.forgotPasswordText);
+        if (forgotPasswordText != null) {
+            forgotPasswordText.setOnClickListener(v -> {
+                Intent intent = new Intent(LoginActivity.this, ForgotPasswordActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     private void setupListeners() {
@@ -54,13 +60,6 @@ public class LoginActivity extends AppCompatActivity {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivityForResult(intent, REGISTER_REQUEST_CODE);
         });
-
-        // Chỉ set listener nếu txtForgotPassword tồn tại
-        if (txtForgotPassword != null) {
-            txtForgotPassword.setOnClickListener(v -> {
-                Toast.makeText(this, "Tính năng đang phát triển", Toast.LENGTH_SHORT).show();
-            });
-        }
     }
 
     private void performLogin() {

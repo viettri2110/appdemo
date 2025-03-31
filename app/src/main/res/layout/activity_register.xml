@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="16dp"
     android:gravity="center"
-    android:background="@color/white">
+    android:background="@drawable/layoutlogin">
 
     <ImageView
         android:layout_width="150dp"

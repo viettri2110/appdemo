@@ -403,19 +403,19 @@
 
                     <ImageView
                         android:id="@+id/imageView2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="48dp"
                         android:layout_gravity="center"
                         android:layout_margin="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/btn_1" />
+                        app:srcCompat="@drawable/home" />
 
                     <TextView
                         android:id="@+id/textView4"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="1dp"
-                        android:text="Explorer"
+                        android:text="Trang chủ"
                         android:textAlignment="center"
                         android:textColor="@color/red" />
                 </LinearLayout>
@@ -431,12 +431,12 @@
                     android:background="?attr/selectableItemBackground">
 
                     <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="48dp"
                         android:layout_gravity="center"
                         android:layout_margin="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/btn_2" />
+                        app:srcCompat="@drawable/heart" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -455,12 +455,12 @@
                     android:orientation="vertical">
 
                     <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="48dp"
                         android:layout_gravity="center"
                         android:layout_margin="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/chat_icon" />
+                        app:srcCompat="@drawable/chat" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -479,12 +479,12 @@
                     android:orientation="vertical">
 
                     <ImageView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="48dp"
                         android:layout_gravity="center"
                         android:layout_margin="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/btn_3" />
+                        app:srcCompat="@drawable/cart" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -504,13 +504,13 @@
 
                     <ImageView
                         android:id="@+id/imageView2"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="36dp"
+                        android:layout_height="48dp"
                         android:layout_gravity="center"
                         android:layout_margin="4dp"
                         android:layout_marginTop="4dp"
                         android:layout_weight="1"
-                        app:srcCompat="@drawable/btn_4" />
+                        app:srcCompat="@drawable/user" />
 
                     <TextView
                         android:id="@+id/textView4"

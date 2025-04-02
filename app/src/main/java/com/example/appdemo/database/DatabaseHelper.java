@@ -519,10 +519,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         
         try {
-            // Query để lấy tin nhắn 2 chiều giữa user và admin
+            // Query chỉ lấy tin nhắn giữa user hiện tại và admin
             String selectQuery = "SELECT * FROM " + TABLE_MESSAGES + 
-                " WHERE (" + COLUMN_SENDER_EMAIL + " = ? OR " + COLUMN_SENDER_EMAIL + " = 'admin@gmail.com') " +
-                " OR (" + COLUMN_RECEIVER_EMAIL + " = ? OR " + COLUMN_RECEIVER_EMAIL + " = 'admin@gmail.com') " +
+                " WHERE (" + COLUMN_SENDER_EMAIL + " = ? AND " + COLUMN_RECEIVER_EMAIL + " = 'admin@gmail.com') " +
+                " OR (" + COLUMN_SENDER_EMAIL + " = 'admin@gmail.com' AND " + COLUMN_RECEIVER_EMAIL + " = ?) " +
                 " ORDER BY " + COLUMN_TIMESTAMP + " ASC";
                  
             Cursor cursor = db.rawQuery(selectQuery, new String[]{userEmail, userEmail});
@@ -566,20 +566,24 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 "u." + COLUMN_NAME + ", " +
                 "(SELECT " + COLUMN_MESSAGE_CONTENT + 
                 " FROM " + TABLE_MESSAGES + " m " +
-                " WHERE m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
-                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " WHERE (m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + ") " +
                 " ORDER BY m." + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_message, " +
                 "(SELECT " + COLUMN_TIMESTAMP + 
                 " FROM " + TABLE_MESSAGES + " m " +
-                " WHERE m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
-                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " WHERE (m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + ") " +
                 " ORDER BY m." + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_time " +
                 "FROM " + TABLE_USERS + " u " +
-                "WHERE u." + COLUMN_IS_ADMIN + " = 0";
+                "WHERE u." + COLUMN_IS_ADMIN + " = 0 " +
+                "AND EXISTS (SELECT 1 FROM " + TABLE_MESSAGES + " m " +
+                "WHERE m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + ") " +
+                "ORDER BY last_time DESC"; // Sắp xếp theo tin nhắn mới nhất
 
             Log.d("DatabaseHelper", "Query: " + query);
             Cursor cursor = db.rawQuery(query, null);
-            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " users");
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " users with messages");
 
             if (cursor.moveToFirst()) {
                 do {
@@ -588,15 +592,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                     String lastMessage = cursor.getString(cursor.getColumnIndex("last_message"));
                     String timestamp = cursor.getString(cursor.getColumnIndex("last_time"));
 
-                    // Chỉ thêm vào danh sách nếu có tin nhắn
-                    if (lastMessage != null) {
-                        Log.d("DatabaseHelper", String.format(
-                            "Chat - User: %s, Email: %s, Last message: %s, Time: %s", 
-                            name, email, lastMessage, timestamp));
-                        
-                        // Tạm thời set unreadCount = 0
-                        chats.add(new ChatPreview(email, name, lastMessage, timestamp, 0));
-                    }
+                    Log.d("DatabaseHelper", String.format(
+                        "Chat - User: %s, Email: %s, Last message: %s, Time: %s", 
+                        name, email, lastMessage, timestamp));
+                    
+                    chats.add(new ChatPreview(email, name, lastMessage, timestamp, 0));
                 } while (cursor.moveToNext());
             }
             cursor.close();

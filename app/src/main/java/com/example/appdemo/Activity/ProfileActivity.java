@@ -157,12 +157,26 @@ public class ProfileActivity extends AppCompatActivity {
     }
 
     private void setupRecentOrders() {
-        String userId = sharedPreferences.getString("email", "");
-        List<Order> recentOrders = dbHelper.getOrdersByUser(userId);
-        
-        recentOrdersAdapter = new RecentOrdersAdapter(this, recentOrders);
-        recyclerRecentOrders.setLayoutManager(new LinearLayoutManager(this));
-        recyclerRecentOrders.setAdapter(recentOrdersAdapter);
+        try {
+            String userEmail = sharedPreferences.getString("email", "");
+            Log.d("ProfileActivity", "Loading orders for user: " + userEmail);
+
+            List<Order> recentOrders = dbHelper.getOrdersByUser(userEmail);
+            Log.d("ProfileActivity", "Found " + recentOrders.size() + " orders");
+
+            // Khởi tạo adapter
+            recentOrdersAdapter = new RecentOrdersAdapter(recentOrders);
+            recyclerRecentOrders.setLayoutManager(new LinearLayoutManager(this));
+            recyclerRecentOrders.setAdapter(recentOrdersAdapter);
+
+            // Hiển thị thông báo nếu không có đơn hàng
+            if (recentOrders.isEmpty()) {
+                Toast.makeText(this, "Bạn chưa có đơn hàng nào", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("ProfileActivity", "Error setting up orders", e);
+            Toast.makeText(this, "Lỗi khi tải đơn hàng: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override

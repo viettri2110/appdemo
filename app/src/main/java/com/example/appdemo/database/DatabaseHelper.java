@@ -24,8 +24,14 @@ import com.example.appdemo.Model.Review;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 7;
+    private static final int DATABASE_VERSION = 9;
 
+    // Các constant dùng chung
+    private static final String COLUMN_ID = "id";
+    private static final String COLUMN_USER_EMAIL = "user_email";
+    private static final String COLUMN_PRODUCT_ID = "product_id";
+    private static final String COLUMN_ORDER_ID = "order_id";
+    
     // Bảng Users
     private static final String TABLE_USERS = "users";
     private static final String COLUMN_EMAIL = "email";
@@ -33,23 +39,20 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_IS_ADMIN = "is_admin";
 
-    // Thêm bảng orders
+    // Bảng Orders
     private static final String TABLE_ORDERS = "orders";
-    private static final String COLUMN_ORDER_ID = "order_id";
-    private static final String COLUMN_USER_ID = "user_id";
     private static final String COLUMN_TOTAL_AMOUNT = "total_amount";
     private static final String COLUMN_ORDER_DATE = "order_date";
-    private static final String COLUMN_STATUS = "status";
+    private static final String COLUMN_ORDER_STATUS = "status";
 
-    // Thêm bảng order_items
+    // Bảng Order Items
     private static final String TABLE_ORDER_ITEMS = "order_items";
-    private static final String COLUMN_ITEM_ID = "item_id";
-    private static final String COLUMN_PRODUCT_ID = "product_id";
+    private static final String COLUMN_ITEM_ID = "id";
     private static final String COLUMN_PRODUCT_NAME = "product_name";
     private static final String COLUMN_QUANTITY = "quantity";
     private static final String COLUMN_PRICE = "price";
 
-    // Thêm các hằng số cho bảng messages
+    // Bảng Messages
     private static final String TABLE_MESSAGES = "messages";
     private static final String COLUMN_MESSAGE_ID = "message_id";
     private static final String COLUMN_SENDER_EMAIL = "sender_email";
@@ -57,17 +60,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_TIMESTAMP = "timestamp";
     private static final String COLUMN_IS_FROM_ADMIN = "is_from_admin";
 
-    // Thêm bảng banners
+    // Bảng Banners
     private static final String TABLE_BANNERS = "banners";
     private static final String COLUMN_BANNER_ID = "id";
     private static final String COLUMN_BANNER_IMAGE = "image_url";
     private static final String COLUMN_BANNER_TEXT = "text";
 
-    // Thêm bảng favorites
+    // Bảng Favorites
     private static final String TABLE_FAVORITES = "favorites";
-    private static final String COLUMN_USER_EMAIL = "user_email";
 
-    // Thêm bảng reviews
+    // Bảng Reviews
     private static final String TABLE_REVIEWS = "reviews";
     private static final String COLUMN_REVIEW_ID = "review_id";
     private static final String COLUMN_USER_NAME = "user_name";
@@ -75,9 +77,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_CONTENT = "content";
     private static final String COLUMN_DATE = "date";
 
-    // Thêm tham chiếu đến bảng products
+    // Bảng Products
     private static final String TABLE_PRODUCTS = "products";
-    private static final String COLUMN_ID = "id";
 
     private Context context;
 
@@ -97,14 +98,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_USERS_TABLE);
 
-        // Tạo bảng orders trước order_items vì có foreign key
+        // Tạo bảng orders
         String CREATE_ORDERS_TABLE = "CREATE TABLE " + TABLE_ORDERS + "("
                 + COLUMN_ORDER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COLUMN_USER_ID + " TEXT,"
-                + COLUMN_TOTAL_AMOUNT + " REAL,"
-                + COLUMN_ORDER_DATE + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                + COLUMN_STATUS + " TEXT DEFAULT 'Pending',"
-                + "FOREIGN KEY(" + COLUMN_USER_ID + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
+                + COLUMN_USER_EMAIL + " TEXT NOT NULL,"
+                + COLUMN_TOTAL_AMOUNT + " REAL NOT NULL,"
+                + COLUMN_ORDER_DATE + " DATETIME DEFAULT (datetime('now', 'localtime')),"
+                + COLUMN_ORDER_STATUS + " TEXT DEFAULT 'Chờ xử lý',"
+                + "FOREIGN KEY(" + COLUMN_USER_EMAIL + ") REFERENCES " + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
                 + ")";
         db.execSQL(CREATE_ORDERS_TABLE);
 
@@ -116,7 +117,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + COLUMN_PRODUCT_NAME + " TEXT,"
                 + COLUMN_QUANTITY + " INTEGER,"
                 + COLUMN_PRICE + " REAL,"
-                + "FOREIGN KEY(" + COLUMN_ORDER_ID + ") REFERENCES " + TABLE_ORDERS + "(" + COLUMN_ORDER_ID + ")"
+                + "FOREIGN KEY(" + COLUMN_ORDER_ID + ") REFERENCES " + TABLE_ORDERS + "(id)"
                 + ")";
         db.execSQL(CREATE_ORDER_ITEMS_TABLE);
 
@@ -183,40 +184,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // Backup dữ liệu users hiện tại trước khi drop table
-        List<ContentValues> userBackup = new ArrayList<>();
-        if (oldVersion < 5) {
-            Cursor cursor = db.query(TABLE_USERS, null, null, null, null, null, null);
-            if (cursor.moveToFirst()) {
-                do {
-                    ContentValues values = new ContentValues();
-                    values.put(COLUMN_EMAIL, cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL)));
-                    values.put(COLUMN_PASSWORD, cursor.getString(cursor.getColumnIndex(COLUMN_PASSWORD)));
-                    values.put(COLUMN_NAME, cursor.getString(cursor.getColumnIndex(COLUMN_NAME)));
-                    values.put(COLUMN_IS_ADMIN, cursor.getInt(cursor.getColumnIndex(COLUMN_IS_ADMIN)));
-                    userBackup.add(values);
-                } while (cursor.moveToNext());
-            }
-            cursor.close();
-        }
+        if (oldVersion < 8) {
+            // Drop old tables if exist
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
 
-        // Drop các bảng cũ
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_BANNERS);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_FAVORITES);
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE_REVIEWS);
-
-        // Tạo lại các bảng
-        onCreate(db);
-
-        // Khôi phục lại dữ liệu users
-        if (oldVersion < 5) {
-            for (ContentValues values : userBackup) {
-                db.insert(TABLE_USERS, null, values);
-            }
+            // Create new tables
+            onCreate(db);
         }
     }
 
@@ -382,48 +356,97 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     }
 
     // Thêm đơn hàng mới
-    public long addOrder(String userId, double totalAmount) {
+    public long addOrder(String userEmail, double totalAmount) {
         SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_USER_ID, userId);
-        values.put(COLUMN_TOTAL_AMOUNT, totalAmount);
-        values.put(COLUMN_STATUS, "Đã thanh toán");
-        return db.insert(TABLE_ORDERS, null, values);
+        long orderId = -1;
+        
+        try {
+            ContentValues values = new ContentValues();
+            values.put(COLUMN_USER_EMAIL, userEmail);
+            values.put(COLUMN_TOTAL_AMOUNT, totalAmount);
+            values.put(COLUMN_ORDER_STATUS, "Chờ xử lý");
+            
+            orderId = db.insert(TABLE_ORDERS, null, values);
+            
+            Log.d("DatabaseHelper", String.format(
+                "Added order - ID: %d, User: %s, Amount: %.0f",
+                orderId,
+                userEmail,
+                totalAmount
+            ));
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error adding order", e);
+            e.printStackTrace();
+        }
+        
+        return orderId;
     }
 
     // Lấy danh sách đơn hàng của user
-    public List<Order> getOrdersByUser(String userId) {
+    public List<Order> getOrdersByUser(String userEmail) {
         List<Order> orders = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        String selectQuery = "SELECT * FROM " + TABLE_ORDERS 
-                + " WHERE " + COLUMN_USER_ID + " = ?"
-                + " ORDER BY " + COLUMN_ORDER_DATE + " DESC";
+        try {
+            // Log thông tin user
+            Log.d("DatabaseHelper", "Getting orders for user: " + userEmail);
 
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{userId});
+            // Kiểm tra user có tồn tại không
+            Cursor userCheck = db.query(TABLE_USERS, 
+                new String[]{COLUMN_EMAIL}, 
+                COLUMN_EMAIL + "=?",
+                new String[]{userEmail}, 
+                null, null, null);
+            
+            Log.d("DatabaseHelper", "User exists: " + userCheck.getCount());
+            userCheck.close();
 
-        if (cursor.moveToFirst()) {
-            do {
-                Order order = new Order();
-                order.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
-                order.setUserId(cursor.getString(cursor.getColumnIndex(COLUMN_USER_ID)));
-                order.setTotalAmount(cursor.getDouble(cursor.getColumnIndex(COLUMN_TOTAL_AMOUNT)));
-                order.setStatus(cursor.getString(cursor.getColumnIndex(COLUMN_STATUS)));
-                // Chuyển đổi timestamp thành Date
-                String dateStr = cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_DATE));
-                try {
-                    order.setOrderDate(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dateStr));
-                } catch (ParseException e) {
-                    e.printStackTrace();
-                }
-                orders.add(order);
-            } while (cursor.moveToNext());
+            // Query lấy đơn hàng - Sửa tên cột cho đúng
+            String query = "SELECT o.id, " +  // Thay order_id bằng id
+                          "o." + COLUMN_USER_EMAIL + ", " +
+                          "o." + COLUMN_ORDER_DATE + ", " +
+                          "o." + COLUMN_TOTAL_AMOUNT + ", " +
+                          "o." + COLUMN_ORDER_STATUS + ", " +
+                          "u." + COLUMN_NAME + " as user_name " +
+                          "FROM " + TABLE_ORDERS + " o " +
+                          "JOIN " + TABLE_USERS + " u ON o." + COLUMN_USER_EMAIL + " = u." + COLUMN_EMAIL + " " +
+                          "WHERE o." + COLUMN_USER_EMAIL + " = ? " +
+                          "ORDER BY o." + COLUMN_ORDER_DATE + " DESC";
+
+            Log.d("DatabaseHelper", "Query: " + query);
+            Log.d("DatabaseHelper", "UserEmail param: " + userEmail);
+
+            Cursor cursor = db.rawQuery(query, new String[]{userEmail});
+            Log.d("DatabaseHelper", "Found orders: " + cursor.getCount());
+
+            if (cursor.moveToFirst()) {
+                do {
+                    Order order = new Order();
+                    order.setId(cursor.getInt(cursor.getColumnIndexOrThrow("id"))); // Thay order_id bằng id
+                    order.setUserEmail(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL)));
+                    order.setUserName(cursor.getString(cursor.getColumnIndexOrThrow("user_name")));
+                    order.setOrderDate(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_DATE)));
+                    order.setTotalAmount(cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TOTAL_AMOUNT)));
+                    order.setStatus(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_STATUS)));
+                    orders.add(order);
+
+                    Log.d("DatabaseHelper", "Order loaded: " + order.getId() + 
+                        ", User: " + order.getUserEmail() + 
+                        ", Date: " + order.getOrderDate() + 
+                        ", Status: " + order.getStatus());
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting orders", e);
+            e.printStackTrace();
         }
-        cursor.close();
+
+        Log.d("DatabaseHelper", "Total orders found: " + orders.size());
         return orders;
     }
 
-    // Thêm phương thức để lưu chi tiết đơn hàng
+    // Thêm chi tiết đơn hàng
     public long addOrderItem(int orderId, int productId, String productName, int quantity, double price) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -435,29 +458,48 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return db.insert(TABLE_ORDER_ITEMS, null, values);
     }
 
-    // Sửa lại phương thức getOrderItems để sử dụng COLUMN_ORDER_ID thay vì id
+    // Lấy chi tiết đơn hàng
     public List<OrderItem> getOrderItems(int orderId) {
         List<OrderItem> items = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
+        
+        try {
+            String query = "SELECT * FROM " + TABLE_ORDER_ITEMS + 
+                          " WHERE " + COLUMN_ORDER_ID + " = ?";
+            
+            Log.d("DatabaseHelper", "Getting items for order: " + orderId);
+            Log.d("DatabaseHelper", "Query: " + query);
+            
+            Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(orderId)});
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " items");
 
-        String selectQuery = "SELECT * FROM " + TABLE_ORDER_ITEMS 
-                + " WHERE " + COLUMN_ORDER_ID + " = ?";
+            if (cursor.moveToFirst()) {
+                do {
+                    OrderItem item = new OrderItem();
+                    item.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ITEM_ID)));
+                    item.setOrderId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORDER_ID)));
+                    item.setProductId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PRODUCT_ID)));
+                    item.setProductName(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PRODUCT_NAME)));
+                    item.setQuantity(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_QUANTITY)));
+                    item.setPrice(cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_PRICE)));
+                    items.add(item);
 
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{String.valueOf(orderId)});
-
-        if (cursor.moveToFirst()) {
-            do {
-                OrderItem item = new OrderItem();
-                item.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ITEM_ID)));
-                item.setOrderId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
-                item.setProductId(cursor.getInt(cursor.getColumnIndex(COLUMN_PRODUCT_ID)));
-                item.setProductName(cursor.getString(cursor.getColumnIndex(COLUMN_PRODUCT_NAME)));
-                item.setQuantity(cursor.getInt(cursor.getColumnIndex(COLUMN_QUANTITY)));
-                item.setPrice(cursor.getDouble(cursor.getColumnIndex(COLUMN_PRICE)));
-                items.add(item);
-            } while (cursor.moveToNext());
+                    Log.d("DatabaseHelper", String.format(
+                        "Loaded item - ID: %d, Product: %s, Quantity: %d, Price: %.0f",
+                        item.getId(),
+                        item.getProductName(),
+                        item.getQuantity(),
+                        item.getPrice()
+                    ));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting order items", e);
+            e.printStackTrace();
         }
-        cursor.close();
+
+        Log.d("DatabaseHelper", "Total items found: " + items.size());
         return items;
     }
 
@@ -797,5 +839,81 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         Log.d("DatabaseHelper", "Returning " + reviews.size() + " reviews");
         return reviews;
+    }
+
+    // Thêm phương thức để lấy tất cả đơn hàng cho admin
+    public List<Order> getAllOrders() {
+        List<Order> orders = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+
+        String query = "SELECT o.*, u.name as user_name FROM " + TABLE_ORDERS + " o " +
+                      "JOIN " + TABLE_USERS + " u ON o.user_email = u.email " +
+                      "ORDER BY o.order_date DESC";
+
+        Cursor cursor = db.rawQuery(query, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Order order = new Order();
+                order.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
+                order.setUserEmail(cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)));
+                order.setUserName(cursor.getString(cursor.getColumnIndex("user_name")));
+                order.setOrderDate(cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_DATE)));
+                order.setTotalAmount(cursor.getDouble(cursor.getColumnIndex(COLUMN_TOTAL_AMOUNT)));
+                order.setStatus(cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_STATUS)));
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return orders;
+    }
+
+    // Thêm phương thức để cập nhật trạng thái đơn hàng
+    public boolean updateOrderStatus(int orderId, String newStatus) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_ORDER_STATUS, newStatus);
+        
+        int result = db.update(TABLE_ORDERS, 
+            values, 
+            COLUMN_ORDER_ID + " = ?",
+            new String[]{String.valueOf(orderId)});
+        
+        return result > 0;
+    }
+
+    public Order getOrderById(int orderId) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Order order = null;
+
+        try {
+            String query = "SELECT o." + COLUMN_ORDER_ID + ", " +
+                          "o." + COLUMN_USER_EMAIL + ", " +
+                          "o." + COLUMN_ORDER_DATE + ", " +
+                          "o." + COLUMN_TOTAL_AMOUNT + ", " +
+                          "o." + COLUMN_ORDER_STATUS + ", " +
+                          "u." + COLUMN_NAME + " as user_name " +
+                          "FROM " + TABLE_ORDERS + " o " +
+                          "JOIN " + TABLE_USERS + " u ON o." + COLUMN_USER_EMAIL + " = u." + COLUMN_EMAIL + " " +
+                          "WHERE o." + COLUMN_ORDER_ID + " = ?";
+
+            Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(orderId)});
+
+            if (cursor.moveToFirst()) {
+                order = new Order();
+                order.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORDER_ID)));
+                order.setUserEmail(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL)));
+                order.setUserName(cursor.getString(cursor.getColumnIndexOrThrow("user_name")));
+                order.setOrderDate(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_DATE)));
+                order.setTotalAmount(cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TOTAL_AMOUNT)));
+                order.setStatus(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_STATUS)));
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting order by ID: " + orderId, e);
+            e.printStackTrace();
+        }
+
+        return order;
     }
 } 

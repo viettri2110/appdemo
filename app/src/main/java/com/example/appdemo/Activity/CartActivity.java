@@ -3,6 +3,7 @@ package com.example.appdemo.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -27,6 +28,8 @@ import com.example.appdemo.Adapter.CartAdapter;
 import com.example.appdemo.Model.CartItem;
 import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.database.DatabaseHelper;
+import com.example.appdemo.Model.Product;
+import com.example.appdemo.Model.Order;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -151,28 +154,71 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
     }
 
     private void processCODPayment() {
-        DatabaseHelper dbHelper = new DatabaseHelper(this);
-        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-        String userEmail = sharedPreferences.getString("email", "");
-        double total = cartManager.getTotal() + (cartManager.getTotal() * TAX_RATE) + DELIVERY_FEE;
-
-        long orderId = dbHelper.addOrder(userEmail, total);
-        if (orderId != -1) {
-            // Lưu chi tiết đơn hàng
-            for (CartItem item : cartItems) {
-                dbHelper.addOrderItem(
-                    (int) orderId,                    // order_id 
-                    item.getProduct().getId(),        // product_id
-                    item.getProduct().getName(),      // product_name
-                    item.getQuantity(),               // quantity  
-                    item.getPrice()                   // price
-                );
-            }
+        try {
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
+            SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String userEmail = sharedPreferences.getString("email", "");
             
-            cartManager.clearCart();
-            showOrderSuccessDialog();
-        } else {
-            Toast.makeText(this, "Có lỗi xảy ra khi đặt hàng", Toast.LENGTH_SHORT).show();
+            Log.d("CartActivity", "Processing COD payment for user: " + userEmail);
+            
+            // Tính tổng tiền bao gồm thuế và phí giao hàng
+            double subtotal = cartManager.getTotal();
+            double tax = subtotal * TAX_RATE;
+            double total = subtotal + tax + DELIVERY_FEE;
+
+            Log.d("CartActivity", String.format(
+                "Order details - Subtotal: %.0f, Tax: %.0f, Delivery: %.0f, Total: %.0f",
+                subtotal, tax, DELIVERY_FEE, total
+            ));
+
+            // Lưu đơn hàng và lấy order ID
+            long orderId = dbHelper.addOrder(userEmail, total);
+            Log.d("CartActivity", "Created order with ID: " + orderId);
+            
+            if (orderId != -1) {
+                // Lưu từng sản phẩm trong đơn hàng
+                for (CartItem item : cartItems) {
+                    Product product = item.getProduct();
+                    long itemId = dbHelper.addOrderItem(
+                        (int) orderId,
+                        product.getId(),
+                        product.getName(),
+                        item.getQuantity(),
+                        product.getPrice()
+                    );
+                    
+                    Log.d("CartActivity", String.format(
+                        "Added order item - ID: %d, Product: %s (ID: %d), Quantity: %d, Price: %.0f",
+                        itemId,
+                        product.getName(),
+                        product.getId(),
+                        item.getQuantity(),
+                        product.getPrice()
+                    ));
+                }
+
+                // Kiểm tra lại đơn hàng đã lưu
+                Order savedOrder = dbHelper.getOrderById((int) orderId);
+                if (savedOrder != null) {
+                    Log.d("CartActivity", String.format(
+                        "Saved order verified - ID: %d, User: %s, Total: %.0f, Status: %s",
+                        savedOrder.getId(),
+                        savedOrder.getUserEmail(),
+                        savedOrder.getTotalAmount(),
+                        savedOrder.getStatus()
+                    ));
+                }
+                
+                cartManager.clearCart();
+                showOrderSuccessDialog();
+            } else {
+                Log.e("CartActivity", "Failed to create order");
+                Toast.makeText(this, "Có lỗi xảy ra khi đặt hàng", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Log.e("CartActivity", "Error processing payment", e);
+            e.printStackTrace();
+            Toast.makeText(this, "Lỗi: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

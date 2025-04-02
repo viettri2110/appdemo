@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     private Runnable bannerRunnable;
     private TextView welcomeText;
     private TextView nameText;
+    private PopularListAdapter popularListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +82,25 @@ public class MainActivity extends AppCompatActivity {
         setupCategories();
         setupBanner();
         displayUserName();
+
+        // Đăng ký listener cho cập nhật sản phẩm
+        ProductManagementActivity.setProductUpdateListener(() -> {
+            // Refresh toàn bộ danh sách
+            allProducts = databaseHelper.getAllProducts();
+            loadPopularProducts();
+            
+            // Cập nhật cả 2 adapter
+            if (popularListAdapter != null) {
+                popularListAdapter = new PopularListAdapter(popularProducts);
+                recyclerViewPopular.setAdapter(popularListAdapter);
+            }
+            
+            if (productAdapter != null) {
+                productAdapter = new ProductAdapter(this, allProducts);
+                recyclerView.setAdapter(productAdapter);
+                setupProductClickListener();
+            }
+        });
     }
 
     private void initViews() {
@@ -175,12 +195,20 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    private void setupProductClickListener() {
+        productAdapter.setOnItemClickListener(product -> {
+            Intent intent = new Intent(MainActivity.this, DetailActivity.class);
+            intent.putExtra("product", product);
+            startActivity(intent);
+        });
+    }
+
     private void loadPopularProducts() {
         // Sắp xếp sản phẩm theo giá giảm dần
         Collections.sort(allProducts, (p1, p2) -> 
             Double.compare(p2.getPrice(), p1.getPrice()));
 
-        // Lấy 10 sản phẩm đầu tiên (đắt nhất)
+        // Lấy 10 sản phẩm đắt nhất
         popularProducts = new ArrayList<>();
         for (int i = 0; i < Math.min(POPULAR_PRODUCT_LIMIT, allProducts.size()); i++) {
             popularProducts.add(allProducts.get(i));
@@ -326,6 +354,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        // Remove listener khi activity bị hủy
+        ProductManagementActivity.setProductUpdateListener(null);
         if (bannerHandler != null && bannerRunnable != null) {
             bannerHandler.removeCallbacks(bannerRunnable);
         }

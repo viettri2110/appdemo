@@ -57,6 +57,16 @@ public class ProductManagementActivity extends AppCompatActivity {
     private Uri selectedImageUri;
     private static final int PERMISSION_CODE = 1001;
 
+    public interface OnProductUpdateListener {
+        void onProductUpdated();
+    }
+    
+    private static OnProductUpdateListener productUpdateListener;
+    
+    public static void setProductUpdateListener(OnProductUpdateListener listener) {
+        productUpdateListener = listener;
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -125,6 +135,11 @@ public class ProductManagementActivity extends AppCompatActivity {
                 databaseHelper.deleteProduct(product.getId());
                 loadProducts();
                 Toast.makeText(this, "Đã xóa sản phẩm", Toast.LENGTH_SHORT).show();
+                
+                // Notify MainActivity to update
+                if (productUpdateListener != null) {
+                    productUpdateListener.onProductUpdated();
+                }
             })
             .setNegativeButton("Hủy", null)
             .show();
@@ -198,6 +213,11 @@ public class ProductManagementActivity extends AppCompatActivity {
                 adapter.notifyItemInserted(products.size() - 1);
                 clearForm();
                 Toast.makeText(this, "Thêm sản phẩm thành công", Toast.LENGTH_SHORT).show();
+                
+                // Notify MainActivity to update
+                if (productUpdateListener != null) {
+                    productUpdateListener.onProductUpdated();
+                }
             } else {
                 Toast.makeText(this, "Không thể thêm sản phẩm", Toast.LENGTH_SHORT).show();
             }
@@ -217,13 +237,17 @@ public class ProductManagementActivity extends AppCompatActivity {
 
         int result = databaseHelper.updateProduct(selectedProduct);
         if (result > 0) {
-            int position = products.indexOf(selectedProduct);
-            adapter.notifyItemChanged(position);
             clearForm();
             selectedProduct = null;
             btnAdd.setEnabled(true);
             btnUpdate.setEnabled(false);
-            Toast.makeText(this, "Product updated successfully", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Cập nhật sản phẩm thành công", Toast.LENGTH_SHORT).show();
+            loadProducts();
+            
+            // Notify MainActivity to update
+            if (productUpdateListener != null) {
+                productUpdateListener.onProductUpdated();
+            }
         }
     }
 

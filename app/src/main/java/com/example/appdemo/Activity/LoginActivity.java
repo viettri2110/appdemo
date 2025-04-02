@@ -20,6 +20,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button btnLogin, btnRegister;
     private DatabaseHelper databaseHelper;
     private ProgressDialog progressDialog;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,6 +33,7 @@ public class LoginActivity extends AppCompatActivity {
         // Khởi tạo Progress Dialog
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Đang đăng nhập...");
+        sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
         
         initViews();
         setupListeners();
@@ -54,7 +56,49 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        btnLogin.setOnClickListener(v -> performLogin());
+        btnLogin.setOnClickListener(v -> {
+            String email = edtEmail.getText().toString().trim();
+            String password = edtPassword.getText().toString().trim();
+
+            if (validateInput(email, password)) {
+                progressDialog.show();
+                new Thread(() -> {
+                    boolean success = databaseHelper.checkUser(email, password);
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        if (success) {
+                            // Lấy thông tin người dùng
+                            String name = databaseHelper.getUserName(email);
+                            boolean isAdmin = databaseHelper.isAdmin(email);
+
+                            // Lưu thông tin đăng nhập
+                            SharedPreferences.Editor editor = sharedPreferences.edit();
+                            editor.putBoolean("isLoggedIn", true);
+                            editor.putString("email", email);
+                            editor.putString("name", name);
+                            editor.putBoolean("isAdmin", isAdmin);
+                            editor.apply();
+
+                            // Chuyển đến màn hình tương ứng
+                            Intent intent;
+                            if (isAdmin) {
+                                Toast.makeText(LoginActivity.this, 
+                                    "Đăng nhập thành công với quyền Admin", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(LoginActivity.this, 
+                                    "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
+                            }
+                            intent = new Intent(LoginActivity.this, MainActivity.class);
+                            startActivity(intent);
+                            finish();
+                        } else {
+                            Toast.makeText(LoginActivity.this,
+                                "Email hoặc mật khẩu không đúng", Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }).start();
+            }
+        });
         
         btnRegister.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
@@ -62,49 +106,16 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    private void performLogin() {
-        String email = edtEmail.getText().toString().trim();
-        String password = edtPassword.getText().toString().trim();
-
-        // Kiểm tra validation
+    private boolean validateInput(String email, String password) {
         if (email.isEmpty()) {
             edtEmail.setError("Vui lòng nhập email");
-            return;
+            return false;
         }
         if (password.isEmpty()) {
             edtPassword.setError("Vui lòng nhập mật khẩu");
-            return;
+            return false;
         }
-
-        progressDialog.show();
-
-        // Tạo thread mới để thực hiện truy vấn database
-        new Thread(() -> {
-            // Kiểm tra đăng nhập
-            final boolean success = databaseHelper.checkUser(email, password);
-            
-            // Chạy trên UI thread để cập nhật giao diện
-            runOnUiThread(() -> {
-                progressDialog.dismiss();
-                if (success) {
-                    // Lưu trạng thái đăng nhập vào SharedPreferences
-                    SharedPreferences prefs = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.putString("email", email);
-                    editor.putBoolean("isLoggedIn", true);
-                    editor.apply();
-
-                    // Chuyển đến MainActivity
-                    Toast.makeText(LoginActivity.this, 
-                        "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
-                    finish();
-                } else {
-                    Toast.makeText(LoginActivity.this, 
-                        "Email hoặc mật khẩu không đúng", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }).start();
+        return true;
     }
 
     @Override

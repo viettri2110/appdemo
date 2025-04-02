@@ -257,6 +257,18 @@
                             android:textAlignment="textStart"
                             android:backgroundTint="@color/primary"/>
 
+                        <Button
+                            android:id="@+id/btnManageUsers"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_margin="8dp"
+                            android:backgroundTint="@color/primary"
+                            android:drawableStart="@drawable/user"
+                            android:drawablePadding="8dp"
+                            android:padding="16dp"
+                            android:text="Quản lý người dùng"
+                            android:textAlignment="textStart" />
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"

@@ -940,4 +940,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         return order;
     }
+
+    public boolean isAdmin(String email) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        String[] columns = {COLUMN_IS_ADMIN};
+        String selection = COLUMN_EMAIL + " = ?";
+        String[] selectionArgs = {email};
+        
+        try {
+            Cursor cursor = db.query(TABLE_USERS, columns, selection, selectionArgs, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int isAdmin = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_ADMIN));
+                cursor.close();
+                return isAdmin == 1;
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error checking admin status", e);
+        }
+        return false;
+    }
 } 

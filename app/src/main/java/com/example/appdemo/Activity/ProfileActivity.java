@@ -87,6 +87,14 @@ public class ProfileActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
+        // Nút quản lý người dùng cho admin
+        if (isAdmin()) {
+            findViewById(R.id.btnManageUsers).setOnClickListener(v -> {
+                Intent intent = new Intent(this, UserManagementActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     private boolean isAdmin() {

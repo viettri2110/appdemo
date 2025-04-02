@@ -11,142 +11,93 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Payment Details"
+        android:text="Thông tin thanh toán"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/black"
         android:layout_marginBottom="24dp"/>
 
+    <!-- Contact Information -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Số điện thoại">
+
+        <EditText
+            android:id="@+id/edtPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="phone"
+            android:maxLength="10"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="Địa chỉ giao hàng">
+
+        <EditText
+            android:id="@+id/edtAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textMultiLine"
+            android:minLines="2"/>
+    </com.google.android.material.textfield.TextInputLayout>
+
     <!-- Card Information Section -->
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="16dp"
+        android:hint="Số thẻ">
 
         <EditText
             android:id="@+id/edtCardNumber"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Card Number"
             android:inputType="number"
-            android:maxLength="16"
-            android:padding="12dp"
-            android:background="@drawable/edit_text_background"/>
+            android:maxLength="19"/>
     </com.google.android.material.textfield.TextInputLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="8dp">
-
-            <EditText
-                android:id="@+id/edtExpiry"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="MM/YY"
-                android:inputType="date"
-                android:maxLength="5"
-                android:padding="12dp"
-                android:background="@drawable/edit_text_background"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginStart="8dp">
-
-            <EditText
-                android:id="@+id/edtCvv"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="CVV"
-                android:inputType="numberPassword"
-                android:maxLength="3"
-                android:padding="12dp"
-                android:background="@drawable/edit_text_background"/>
-        </com.google.android.material.textfield.TextInputLayout>
-    </LinearLayout>
 
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="24dp"
+        android:hint="Tên chủ thẻ">
 
         <EditText
             android:id="@+id/edtCardHolder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Card Holder Name"
-            android:inputType="textPersonName"
-            android:padding="12dp"
-            android:background="@drawable/edit_text_background"/>
+            android:inputType="textPersonName"/>
     </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Order Summary -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Order Summary"
+        android:text="Tổng thanh toán:"
         android:textSize="18sp"
+        android:textStyle="bold"/>
+
+    <TextView
+        android:id="@+id/txtTotal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:textColor="@color/red"
         android:textStyle="bold"
-        android:layout_marginBottom="16dp"/>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Subtotal"/>
-
-        <TextView
-            android:id="@+id/txtSubtotal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"/>
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Total"
-            android:textStyle="bold"/>
-
-        <TextView
-            android:id="@+id/txtTotal"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="$0.00"
-            android:textStyle="bold"/>
-    </LinearLayout>
+        android:layout_marginBottom="32dp"/>
 
     <!-- Payment Button -->
     <Button
         android:id="@+id/btnPay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Pay Now"
-        android:textSize="16sp"
-        android:padding="12dp"
-        android:backgroundTint="@color/primary"/>
+        android:text="Thanh toán"
+        android:background="@drawable/red_button_background"
+        android:textColor="@color/white"/>
 
 </LinearLayout> 

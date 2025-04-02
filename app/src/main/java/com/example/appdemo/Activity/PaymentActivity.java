@@ -18,8 +18,8 @@ import com.example.appdemo.database.DatabaseHelper;
 import java.util.Locale;
 
 public class PaymentActivity extends AppCompatActivity {
-    private EditText edtCardNumber, edtExpiry, edtCvv, edtCardHolder;
-    private TextView txtSubtotal, txtTotal;
+    private EditText edtCardNumber, edtCardHolder, edtPhone, edtAddress;
+    private TextView txtTotal;
     private Button btnPay;
     private ProgressDialog progressDialog;
     private double totalAmount = 0;
@@ -33,37 +33,28 @@ public class PaymentActivity extends AppCompatActivity {
 
         dbHelper = new DatabaseHelper(this);
         sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
-
-        // Nhận số tiền từ CartActivity
-        if (getIntent().hasExtra("total_amount")) {
-            totalAmount = getIntent().getDoubleExtra("total_amount", 0);
-        }
-
+        
         initViews();
         setupListeners();
-        setupCardNumberFormatter();
-        setupExpiryDateFormatter();
-        updatePrices();
+        
+        // Lấy và hiển thị tổng tiền
+        totalAmount = getIntent().getDoubleExtra("total_amount", 0);
+        txtTotal.setText(formatCurrency(totalAmount));
     }
 
     private void initViews() {
         edtCardNumber = findViewById(R.id.edtCardNumber);
-        edtExpiry = findViewById(R.id.edtExpiry);
-        edtCvv = findViewById(R.id.edtCvv);
         edtCardHolder = findViewById(R.id.edtCardHolder);
-        txtSubtotal = findViewById(R.id.txtSubtotal);
+        edtPhone = findViewById(R.id.edtPhone);
+        edtAddress = findViewById(R.id.edtAddress);
         txtTotal = findViewById(R.id.txtTotal);
         btnPay = findViewById(R.id.btnPay);
         
         progressDialog = new ProgressDialog(this);
-        progressDialog.setMessage("Processing payment...");
-    }
+        progressDialog.setMessage("Đang xử lý thanh toán...");
+        progressDialog.setCancelable(false);
 
-    private void setupListeners() {
-        btnPay.setOnClickListener(v -> performPayment());
-    }
-
-    private void setupCardNumberFormatter() {
+        // Format số thẻ tự động
         edtCardNumber.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
@@ -73,16 +64,18 @@ public class PaymentActivity extends AppCompatActivity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                // Format card number in groups of 4
-                String text = s.toString().replace(" ", "");
+                String input = s.toString();
+                String numbers = input.replaceAll("\\D", "");
                 StringBuilder formatted = new StringBuilder();
-                for (int i = 0; i < text.length(); i++) {
+                
+                for (int i = 0; i < numbers.length(); i++) {
                     if (i > 0 && i % 4 == 0) {
                         formatted.append(" ");
                     }
-                    formatted.append(text.charAt(i));
+                    formatted.append(numbers.charAt(i));
                 }
-                if (!s.toString().equals(formatted.toString())) {
+                
+                if (!input.equals(formatted.toString())) {
                     edtCardNumber.setText(formatted.toString());
                     edtCardNumber.setSelection(formatted.length());
                 }
@@ -90,51 +83,48 @@ public class PaymentActivity extends AppCompatActivity {
         });
     }
 
-    private void setupExpiryDateFormatter() {
-        edtExpiry.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                if (s.length() == 2 && !s.toString().contains("/")) {
-                    s.append("/");
-                    edtExpiry.setSelection(s.length());
-                }
-            }
-        });
+    private String formatCurrency(double amount) {
+        return String.format(Locale.US, "%,.0f₫", amount);
     }
 
-    private void updatePrices() {
-        // Format số tiền với 2 chữ số thập phân
-        String formattedAmount = String.format(Locale.US, "%.2f", totalAmount);
-        txtSubtotal.setText("$" + formattedAmount);
-        txtTotal.setText("$" + formattedAmount);
-    }
-
-    private void performPayment() {
-        if (!validateInputs()) {
-            return;
+    private boolean validateInputs() {
+        if (edtPhone.getText().toString().trim().length() < 10) {
+            edtPhone.setError("Vui lòng nhập số điện thoại hợp lệ");
+            return false;
         }
+        if (edtAddress.getText().toString().trim().isEmpty()) {
+            edtAddress.setError("Vui lòng nhập địa chỉ giao hàng");
+            return false;
+        }
+        if (edtCardNumber.getText().toString().replace(" ", "").length() < 5) {
+            edtCardNumber.setError("Số thẻ không hợp lệ");
+            return false;
+        }
+        if (edtCardHolder.getText().toString().isEmpty()) {
+            edtCardHolder.setError("Vui lòng nhập tên chủ thẻ");
+            return false;
+        }
+        return true;
+    }
+
+    private void setupListeners() {
+        btnPay.setOnClickListener(v -> processPayment());
+    }
+
+    private void processPayment() {
+        if (!validateInputs()) return;
 
         progressDialog.show();
-
         new Thread(() -> {
             try {
                 Thread.sleep(2000); // Giả lập xử lý thanh toán
                 
-                // Lưu đơn hàng vào database
-                String userId = sharedPreferences.getString("email", "");
-                long orderId = dbHelper.addOrder(userId, totalAmount);
-
+                String userEmail = sharedPreferences.getString("email", "");
+                long orderId = dbHelper.addOrder(userEmail, totalAmount);
+                
                 runOnUiThread(() -> {
                     progressDialog.dismiss();
                     if (orderId != -1) {
-                        Toast.makeText(PaymentActivity.this, 
-                            "Thanh toán thành công!", Toast.LENGTH_SHORT).show();
                         setResult(RESULT_OK);
                         finish();
                     } else {
@@ -146,25 +136,5 @@ public class PaymentActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         }).start();
-    }
-
-    private boolean validateInputs() {
-        if (edtCardNumber.getText().toString().replace(" ", "").length() != 10) {
-            edtCardNumber.setError("Invalid card number");
-            return false;
-        }
-        if (edtExpiry.getText().toString().length() != 5) {
-            edtExpiry.setError("Invalid expiry date");
-            return false;
-        }
-        if (edtCvv.getText().toString().length() != 3) {
-            edtCvv.setError("Invalid CVV");
-            return false;
-        }
-        if (edtCardHolder.getText().toString().isEmpty()) {
-            edtCardHolder.setError("Required");
-            return false;
-        }
-        return true;
     }
 } 

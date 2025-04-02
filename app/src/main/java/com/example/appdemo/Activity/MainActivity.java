@@ -24,6 +24,7 @@ import com.example.appdemo.Adapter.PopularListAdapter;
 import com.example.appdemo.Adapter.BannerAdapter;
 import com.example.appdemo.database.ProductDatabaseHelper;
 import com.example.appdemo.Model.Product;
+import com.example.appdemo.Model.Banner;
 import com.example.appdemo.R;
 import com.example.appdemo.Manager.CartManager;
 import com.example.appdemo.database.DatabaseHelper;
@@ -284,10 +285,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void setupBanner() {
         viewPagerBanner = findViewById(R.id.viewPagerBanner);
-        BannerAdapter bannerAdapter = new BannerAdapter();
+        
+        // Chỉ cần truyền đường dẫn hình ảnh
+        List<Banner> banners = new ArrayList<>();
+        banners.add(new Banner(1, "android.resource://" + getPackageName() + "/" + R.drawable.banner1, ""));
+        banners.add(new Banner(2, "android.resource://" + getPackageName() + "/" + R.drawable.banner2, ""));
+        banners.add(new Banner(3, "android.resource://" + getPackageName() + "/" + R.drawable.banner3, ""));
+
+        BannerAdapter bannerAdapter = new BannerAdapter(banners);
         viewPagerBanner.setAdapter(bannerAdapter);
 
-        // Auto scroll banner
+        // Auto scroll
         bannerHandler = new Handler();
         bannerRunnable = new Runnable() {
             @Override

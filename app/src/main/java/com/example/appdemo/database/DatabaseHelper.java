@@ -526,33 +526,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return chats;
     }
 
-    // Thêm phương thức quản lý banner
+    // Thêm các phương thức để quản lý banner
+    public List<Banner> getAllBanners() {
+        List<Banner> banners = new ArrayList<>();
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_BANNERS, null, null, null, null, null, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                int id = cursor.getInt(cursor.getColumnIndex(COLUMN_BANNER_ID));
+                String imageUrl = cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_IMAGE));
+                String text = cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_TEXT));
+                banners.add(new Banner(id, imageUrl, text));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        return banners;
+    }
+
     public long addBanner(String imageUrl, String text) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_BANNER_IMAGE, imageUrl);
         values.put(COLUMN_BANNER_TEXT, text);
         return db.insert(TABLE_BANNERS, null, values);
-    }
-
-    public List<Banner> getAllBanners() {
-        List<Banner> banners = new ArrayList<>();
-        String selectQuery = "SELECT * FROM " + TABLE_BANNERS;
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery(selectQuery, null);
-
-        if (cursor.moveToFirst()) {
-            do {
-                Banner banner = new Banner(
-                    cursor.getInt(cursor.getColumnIndex(COLUMN_BANNER_ID)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_IMAGE)),
-                    cursor.getString(cursor.getColumnIndex(COLUMN_BANNER_TEXT))
-                );
-                banners.add(banner);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        return banners;
     }
 
     public void deleteBanner(int id) {

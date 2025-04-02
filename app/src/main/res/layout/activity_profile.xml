@@ -269,6 +269,18 @@
                             android:text="Quản lý người dùng"
                             android:textAlignment="textStart" />
 
+                        <Button
+                            android:id="@+id/btnManageChats"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Quản lý tin nhắn"
+                            android:drawableStart="@drawable/ic_chat"
+                            android:drawablePadding="8dp"
+                            android:padding="12dp"
+                            android:layout_marginBottom="8dp"
+                            android:textAlignment="textStart"
+                            android:backgroundTint="@color/primary"/>
+
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"

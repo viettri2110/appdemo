@@ -95,6 +95,15 @@ public class ProfileActivity extends AppCompatActivity {
                 startActivity(intent);
             });
         }
+
+        // Nút quản lý tin nhắn cho admin
+        if (isAdmin()) {
+            Button btnManageChats = findViewById(R.id.btnManageChats);
+            btnManageChats.setOnClickListener(v -> {
+                Intent intent = new Intent(this, ChatActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     private boolean isAdmin() {

@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
 
 import com.example.appdemo.Model.Order;
 import com.example.appdemo.Model.OrderItem;
@@ -24,7 +26,7 @@ import com.example.appdemo.Model.Review;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String DATABASE_NAME = "AppDB";
-    private static final int DATABASE_VERSION = 9;
+    private static final int DATABASE_VERSION = 10;
 
     // Các constant dùng chung
     private static final String COLUMN_ID = "id";
@@ -55,6 +57,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String TABLE_MESSAGES = "messages";
     private static final String COLUMN_MESSAGE_ID = "message_id";
     private static final String COLUMN_SENDER_EMAIL = "sender_email";
+    private static final String COLUMN_RECEIVER_EMAIL = "receiver_email";
     private static final String COLUMN_MESSAGE_CONTENT = "content";
     private static final String COLUMN_TIMESTAMP = "timestamp";
     private static final String COLUMN_IS_FROM_ADMIN = "is_from_admin";
@@ -120,16 +123,16 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 + ")";
         db.execSQL(CREATE_ORDER_ITEMS_TABLE);
 
-        // Tạo bảng messages
+        // Tạo bảng messages với cấu trúc mới
         String CREATE_MESSAGES_TABLE = "CREATE TABLE " + TABLE_MESSAGES + "("
-                + COLUMN_MESSAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COLUMN_SENDER_EMAIL + " TEXT,"
-                + COLUMN_MESSAGE_CONTENT + " TEXT,"
-                + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
-                + COLUMN_IS_FROM_ADMIN + " INTEGER DEFAULT 0,"
-                + "FOREIGN KEY(" + COLUMN_SENDER_EMAIL + ") REFERENCES " 
-                + TABLE_USERS + "(" + COLUMN_EMAIL + ")"
-                + ")";
+            + COLUMN_MESSAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+            + COLUMN_SENDER_EMAIL + " TEXT,"
+            + COLUMN_RECEIVER_EMAIL + " TEXT,"
+            + COLUMN_MESSAGE_CONTENT + " TEXT,"
+            + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+            + COLUMN_IS_FROM_ADMIN + " INTEGER DEFAULT 0,"
+            + "read INTEGER DEFAULT 0"
+            + ")";
         db.execSQL(CREATE_MESSAGES_TABLE);
 
         // Tạo bảng banners
@@ -183,13 +186,21 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 8) {
-            // Drop old tables if exist
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDER_ITEMS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_ORDERS);
+        if (oldVersion < 10) {
+            // Xóa bảng messages cũ
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_MESSAGES);
 
-            // Create new tables
-            onCreate(db);
+            // Tạo lại bảng messages với cấu trúc mới
+            String CREATE_MESSAGES_TABLE = "CREATE TABLE " + TABLE_MESSAGES + "("
+                + COLUMN_MESSAGE_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_SENDER_EMAIL + " TEXT,"
+                + COLUMN_RECEIVER_EMAIL + " TEXT,"
+                + COLUMN_MESSAGE_CONTENT + " TEXT,"
+                + COLUMN_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP,"
+                + COLUMN_IS_FROM_ADMIN + " INTEGER DEFAULT 0,"
+                + "read INTEGER DEFAULT 0"
+                + ")";
+            db.execSQL(CREATE_MESSAGES_TABLE);
         }
     }
 
@@ -502,69 +513,129 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         return items;
     }
 
-    // Thêm phương thức để lưu tin nhắn
-    public long saveMessage(String senderEmail, String content, boolean isFromAdmin) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        ContentValues values = new ContentValues();
-        values.put(COLUMN_SENDER_EMAIL, senderEmail);
-        values.put(COLUMN_MESSAGE_CONTENT, content);
-        values.put(COLUMN_IS_FROM_ADMIN, isFromAdmin ? 1 : 0);
-        return db.insert(TABLE_MESSAGES, null, values);
-    }
-
     // Lấy tin nhắn của một user
     public List<Message> getMessagesForUser(String userEmail) {
         List<Message> messages = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String selectQuery = "SELECT * FROM " + TABLE_MESSAGES 
-                + " WHERE " + COLUMN_SENDER_EMAIL + " = ? OR " 
-                + COLUMN_IS_FROM_ADMIN + " = 1"
-                + " ORDER BY " + COLUMN_TIMESTAMP + " ASC";
-                
-        Cursor cursor = db.rawQuery(selectQuery, new String[]{userEmail});
+        try {
+            // Query để lấy tin nhắn 2 chiều giữa user và admin
+            String selectQuery = "SELECT * FROM " + TABLE_MESSAGES + 
+                " WHERE (" + COLUMN_SENDER_EMAIL + " = ? OR " + COLUMN_SENDER_EMAIL + " = 'admin@gmail.com') " +
+                " OR (" + COLUMN_RECEIVER_EMAIL + " = ? OR " + COLUMN_RECEIVER_EMAIL + " = 'admin@gmail.com') " +
+                " ORDER BY " + COLUMN_TIMESTAMP + " ASC";
+                 
+            Cursor cursor = db.rawQuery(selectQuery, new String[]{userEmail, userEmail});
+            Log.d("DatabaseHelper", "Getting messages for user: " + userEmail);
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " messages");
 
-        if (cursor.moveToFirst()) {
-            do {
-                String content = cursor.getString(cursor.getColumnIndex(COLUMN_MESSAGE_CONTENT));
-                boolean isFromAdmin = cursor.getInt(cursor.getColumnIndex(COLUMN_IS_FROM_ADMIN)) == 1;
-                messages.add(new Message(content, isFromAdmin));
-            } while (cursor.moveToNext());
+            if (cursor.moveToFirst()) {
+                do {
+                    String content = cursor.getString(cursor.getColumnIndex(COLUMN_MESSAGE_CONTENT));
+                    String senderEmail = cursor.getString(cursor.getColumnIndex(COLUMN_SENDER_EMAIL));
+                    String receiverEmail = cursor.getString(cursor.getColumnIndex(COLUMN_RECEIVER_EMAIL));
+                    String timestamp = cursor.getString(cursor.getColumnIndex(COLUMN_TIMESTAMP));
+                    
+                    // Xác định tin nhắn từ admin
+                    boolean isFromAdmin = senderEmail.equals("admin@gmail.com");
+                    
+                    Log.d("DatabaseHelper", String.format(
+                        "Message - Content: %s, From: %s, To: %s, IsAdmin: %b, Time: %s", 
+                        content, senderEmail, receiverEmail, isFromAdmin, timestamp));
+                    
+                    messages.add(new Message(content, isFromAdmin, timestamp));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting messages", e);
+            e.printStackTrace();
         }
-        cursor.close();
         return messages;
     }
 
-    // Lấy tất cả tin nhắn cho admin
-    public List<ChatPreview> getAllChatsForAdmin() {
+    // Lấy danh sách chat cho admin
+    public List<ChatPreview> getAllChats() {
         List<ChatPreview> chats = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
         
-        String selectQuery = "SELECT DISTINCT " + COLUMN_SENDER_EMAIL + ", "
-                + "(SELECT " + COLUMN_MESSAGE_CONTENT 
-                + " FROM " + TABLE_MESSAGES + " m2"
-                + " WHERE m2." + COLUMN_SENDER_EMAIL + " = m1." + COLUMN_SENDER_EMAIL
-                + " ORDER BY " + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_message,"
-                + "(SELECT " + COLUMN_TIMESTAMP
-                + " FROM " + TABLE_MESSAGES + " m2"
-                + " WHERE m2." + COLUMN_SENDER_EMAIL + " = m1." + COLUMN_SENDER_EMAIL
-                + " ORDER BY " + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_time"
-                + " FROM " + TABLE_MESSAGES + " m1"
-                + " WHERE " + COLUMN_SENDER_EMAIL + " != 'admin'"
-                + " ORDER BY last_time DESC";
-                
-        Cursor cursor = db.rawQuery(selectQuery, null);
+        try {
+            // Query để lấy danh sách user có tin nhắn
+            String query = "SELECT DISTINCT " +
+                "u." + COLUMN_EMAIL + ", " +
+                "u." + COLUMN_NAME + ", " +
+                "(SELECT " + COLUMN_MESSAGE_CONTENT + 
+                " FROM " + TABLE_MESSAGES + " m " +
+                " WHERE m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " ORDER BY m." + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_message, " +
+                "(SELECT " + COLUMN_TIMESTAMP + 
+                " FROM " + TABLE_MESSAGES + " m " +
+                " WHERE m." + COLUMN_SENDER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " OR m." + COLUMN_RECEIVER_EMAIL + " = u." + COLUMN_EMAIL + 
+                " ORDER BY m." + COLUMN_TIMESTAMP + " DESC LIMIT 1) as last_time " +
+                "FROM " + TABLE_USERS + " u " +
+                "WHERE u." + COLUMN_IS_ADMIN + " = 0";
 
-        if (cursor.moveToFirst()) {
-            do {
-                String email = cursor.getString(0);
-                String lastMessage = cursor.getString(1);
-                String timestamp = cursor.getString(2);
-                chats.add(new ChatPreview(email, lastMessage, timestamp));
-            } while (cursor.moveToNext());
+            Log.d("DatabaseHelper", "Query: " + query);
+            Cursor cursor = db.rawQuery(query, null);
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " users");
+
+            if (cursor.moveToFirst()) {
+                do {
+                    String email = cursor.getString(cursor.getColumnIndex(COLUMN_EMAIL));
+                    String name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
+                    String lastMessage = cursor.getString(cursor.getColumnIndex("last_message"));
+                    String timestamp = cursor.getString(cursor.getColumnIndex("last_time"));
+
+                    // Chỉ thêm vào danh sách nếu có tin nhắn
+                    if (lastMessage != null) {
+                        Log.d("DatabaseHelper", String.format(
+                            "Chat - User: %s, Email: %s, Last message: %s, Time: %s", 
+                            name, email, lastMessage, timestamp));
+                        
+                        // Tạm thời set unreadCount = 0
+                        chats.add(new ChatPreview(email, name, lastMessage, timestamp, 0));
+                    }
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting chats", e);
+            e.printStackTrace();
         }
-        cursor.close();
         return chats;
+    }
+
+    // Lưu tin nhắn mới
+    public void saveMessage(String userEmail, String content, boolean isFromAdmin) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        try {
+            ContentValues values = new ContentValues();
+            
+            // Xác định người gửi và người nhận
+            String senderEmail = isFromAdmin ? "admin@gmail.com" : userEmail;
+            String receiverEmail = isFromAdmin ? userEmail : "admin@gmail.com";
+            
+            values.put(COLUMN_SENDER_EMAIL, senderEmail);
+            values.put(COLUMN_RECEIVER_EMAIL, receiverEmail);
+            values.put(COLUMN_MESSAGE_CONTENT, content);
+            values.put(COLUMN_IS_FROM_ADMIN, isFromAdmin ? 1 : 0);
+            values.put(COLUMN_TIMESTAMP, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                .format(new Date()));
+            
+            long id = db.insert(TABLE_MESSAGES, null, values);
+            Log.d("DatabaseHelper", String.format(
+                "Saved message - ID: %d, From: %s, To: %s, Content: %s, IsAdmin: %b",
+                id, senderEmail, receiverEmail, content, isFromAdmin));
+
+            if (id == -1) {
+                Log.e("DatabaseHelper", "Failed to save message");
+            }
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error saving message", e);
+            e.printStackTrace();
+        }
     }
 
     // Thêm các phương thức để quản lý banner

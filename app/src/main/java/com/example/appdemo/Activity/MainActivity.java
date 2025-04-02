@@ -258,9 +258,21 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, FavoritesActivity.class));
         });
 
-        chatBtn.setOnClickListener(view ->
-                startActivity(new Intent(MainActivity.this, ChatActivity.class))
-        );
+        chatBtn.setOnClickListener(view -> {
+            SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+            String userEmail = sharedPreferences.getString("email", "");
+            boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+
+            if (isAdmin) {
+                // Nếu là admin, mở AdminChatListActivity để xem danh sách chat
+                startActivity(new Intent(MainActivity.this, ChatActivity.class));
+            } else {
+                // Nếu là user thường, mở ChatActivity với userEmail
+                Intent intent = new Intent(MainActivity.this, ChatActivity.class);
+                intent.putExtra("userEmail", userEmail);
+                startActivity(intent);
+            }
+        });
 
         cartBtn.setOnClickListener(view ->
                 startActivity(new Intent(MainActivity.this, CartActivity.class))

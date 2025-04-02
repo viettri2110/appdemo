@@ -25,8 +25,7 @@ import java.util.ArrayList;
 
 public class ProfileActivity extends AppCompatActivity {
     private TextView txtUsername, txtEmail;
-    private Button btnLogout, btnUserManagement;
-    private CardView adminControlsCard;
+    private Button btnLogout;
     private LinearLayout layoutOrders, layoutReviews, layoutEdit;
     private Button btnViewAllOrders;
     private RecyclerView recyclerRecentOrders;
@@ -34,32 +33,29 @@ public class ProfileActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private Button btnEditProfile;
     private RecentOrdersAdapter recentOrdersAdapter;
-    private LinearLayout adminControls;
+    private CardView adminControls;
+    private TextView txtPendingOrders, txtProcessingOrders, txtCompletedOrders;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
 
-        // Khởi tạo DatabaseHelper
         dbHelper = new DatabaseHelper(this);
-        
         initViews();
         setupListeners();
         loadUserData();
         checkAdminRights();
         setupRecentOrders();
-
-        ImageButton btnBack = findViewById(R.id.btnBack);
-        btnBack.setOnClickListener(v -> finish());
+        if (isAdmin()) {
+            updateOrderStatistics();
+        }
     }
 
     private void initViews() {
         txtUsername = findViewById(R.id.txtUsername);
         txtEmail = findViewById(R.id.txtEmail);
         btnLogout = findViewById(R.id.btnLogout);
-        btnUserManagement = findViewById(R.id.btnUserManagement);
-        adminControlsCard = findViewById(R.id.adminControlsCard);
         layoutOrders = findViewById(R.id.layoutOrders);
         layoutReviews = findViewById(R.id.layoutReviews);
         layoutEdit = findViewById(R.id.layoutEdit);
@@ -67,6 +63,11 @@ public class ProfileActivity extends AppCompatActivity {
         recyclerRecentOrders = findViewById(R.id.recyclerRecentOrders);
         btnEditProfile = findViewById(R.id.btnEditProfile);
         adminControls = findViewById(R.id.adminControls);
+        
+        // Thống kê đơn hàng
+        txtPendingOrders = findViewById(R.id.txtPendingOrders);
+        txtProcessingOrders = findViewById(R.id.txtProcessingOrders);
+        txtCompletedOrders = findViewById(R.id.txtCompletedOrders);
 
         sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
     }
@@ -74,16 +75,47 @@ public class ProfileActivity extends AppCompatActivity {
     private void setupListeners() {
         btnLogout.setOnClickListener(v -> logout());
         layoutOrders.setOnClickListener(v -> openOrderHistory());
-        layoutReviews.setOnClickListener(v -> {
-            Intent intent = new Intent(ProfileActivity.this, MyReviewsActivity.class);
-            startActivity(intent);
-        });
-        btnEditProfile.setOnClickListener(v -> openEditProfile());
+        layoutReviews.setOnClickListener(v -> openReviews());
         layoutEdit.setOnClickListener(v -> openEditProfile());
         btnViewAllOrders.setOnClickListener(v -> openOrderHistory());
-        
-        // Thay đổi cách xử lý click cho nút quản lý người dùng
-        btnUserManagement.setOnClickListener(v -> openUserManagement());
+        btnEditProfile.setOnClickListener(v -> openEditProfile());
+
+        // Nút quản lý đơn hàng cho admin
+        if (isAdmin()) {
+            findViewById(R.id.btnManageOrders).setOnClickListener(v -> {
+                Intent intent = new Intent(this, OrderManagementActivity.class);
+                startActivity(intent);
+            });
+        }
+    }
+
+    private boolean isAdmin() {
+        return sharedPreferences.getBoolean("isAdmin", false);
+    }
+
+    private void updateOrderStatistics() {
+        // Lấy số lượng đơn hàng theo trạng thái
+        List<Order> allOrders = dbHelper.getAllOrders();
+        int pending = 0, processing = 0, completed = 0;
+
+        for (Order order : allOrders) {
+            switch (order.getStatus()) {
+                case "Chờ xử lý":
+                    pending++;
+                    break;
+                case "Đang giao hàng":
+                    processing++;
+                    break;
+                case "Đã giao":
+                    completed++;
+                    break;
+            }
+        }
+
+        // Cập nhật UI
+        txtPendingOrders.setText(String.valueOf(pending));
+        txtProcessingOrders.setText(String.valueOf(processing));
+        txtCompletedOrders.setText(String.valueOf(completed));
     }
 
     private void loadUserData() {
@@ -94,17 +126,12 @@ public class ProfileActivity extends AppCompatActivity {
         txtUsername.setText(username);
         txtEmail.setText(email);
         
-        // Hiển thị admin controls và nút quản lý người dùng
-        adminControlsCard.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
-        btnUserManagement.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
+        // Hiển thị admin controls nếu là admin
+        adminControls.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
 
+        // Cập nhật thống kê nếu là admin
         if (isAdmin) {
-            // Thêm nút quản lý chat
-            Button btnManageChats = findViewById(R.id.btnManageChats);
-            btnManageChats.setVisibility(View.VISIBLE);
-            btnManageChats.setOnClickListener(v -> 
-                startActivity(new Intent(this, AdminChatListActivity.class))
-            );
+            updateOrderStatistics();
         }
     }
 
@@ -138,13 +165,13 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void openUserManagement() {
+    private void openReviews() {
         try {
-            Intent intent = new Intent(ProfileActivity.this, UserManagementActivity.class);
+            Intent intent = new Intent(this, MyReviewsActivity.class);
             startActivity(intent);
         } catch (Exception e) {
             e.printStackTrace();
-            Toast.makeText(this, "Không thể mở trang quản lý người dùng", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Không thể mở trang đánh giá", Toast.LENGTH_SHORT).show();
         }
     }
 

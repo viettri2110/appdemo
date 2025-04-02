@@ -1,6 +1,7 @@
 package com.example.appdemo.Activity;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -24,6 +26,7 @@ import com.example.appdemo.R;
 import com.example.appdemo.Adapter.CartAdapter;
 import com.example.appdemo.Model.CartItem;
 import com.example.appdemo.Manager.CartManager;
+import com.example.appdemo.database.DatabaseHelper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,8 +40,10 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
     private static final int PAYMENT_REQUEST_CODE = 100;
     private CartManager cartManager;
     private ImageView backBtn;
-    private double tax;
-    private TextView totalFeeTxt, taxTxt, deliveryTxt, totalTxt,txtTotal;
+    private TextView totalFeeTxt, taxTxt, deliveryTxt, totalTxt, emptyCartText;
+    private LinearLayout checkoutLayout;
+    private static final double TAX_RATE = 0.02; // 2% tax
+    private static final double DELIVERY_FEE = 30000; // 30,000 VNĐ delivery fee
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,35 +54,21 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         cartManager = CartManager.getInstance(this);
         
         initViews();
-        initCartList();
+        setupRecyclerView();
         setupListeners();
-        calculateCart();
-    }
-
-    private void calculateCart() {
-        double percentTax = 0.02;
-        double delivery = 30000; // Đổi thành 30,000 VNĐ
-        
-        double itemTotal = Math.round(cartManager.getTotal() * 100.0) / 100.0;
-        tax = Math.round((itemTotal * percentTax) * 100.0) / 100.0;
-        double total = Math.round((itemTotal + tax + delivery) * 100.0) / 100.0;
-
-        totalFeeTxt.setText(String.format("%,.0f VNĐ", itemTotal));
-        taxTxt.setText(String.format("%,.0f VNĐ", tax));
-        deliveryTxt.setText(String.format("%,.0f VNĐ", delivery));
-        totalTxt.setText(String.format("%,.0f VNĐ", total));
-        txtTotal.setText(String.format("%,.0f VNĐ", total));
+        updateCartUI();
     }
 
     private void initViews() {
         recyclerView = findViewById(R.id.recyclerView);
+        btnOrderNow = findViewById(R.id.btnOrderNow);
+        backBtn = findViewById(R.id.backBtn);
         totalFeeTxt = findViewById(R.id.totalFeeTxt);
         taxTxt = findViewById(R.id.taxTxt);
         deliveryTxt = findViewById(R.id.deliveryTxt);
         totalTxt = findViewById(R.id.totalTxt);
-        btnOrderNow = findViewById(R.id.btnOrderNow);
-        backBtn = findViewById(R.id.backBtn);
-        txtTotal=findViewById(R.id.txtTotal);
+        emptyCartText = findViewById(R.id.emptyCartText);
+        checkoutLayout = findViewById(R.id.checkoutLayout);
 
         if (recyclerView == null) {
             Toast.makeText(this, "Error: RecyclerView not found", Toast.LENGTH_SHORT).show();
@@ -86,68 +77,141 @@ public class CartActivity extends AppCompatActivity implements CartAdapter.OnCar
         }
     }
 
-    private void initCartList() {
-        cartItems = new ArrayList<>();
-        cartItems.addAll(cartManager.getCartItems());
-
+    private void setupRecyclerView() {
+        cartItems = cartManager.getCartItems();
         cartAdapter = new CartAdapter(cartItems, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(cartAdapter);
-        
-        calculateCart();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (cartAdapter != null) {
-            cartItems.clear();
-            cartItems.addAll(cartManager.getCartItems());
-            cartAdapter.notifyDataSetChanged();
-            calculateCart();
-        }
     }
 
     private void setupListeners() {
-        btnOrderNow.setOnClickListener(v -> {
-            if (cartItems != null && !cartItems.isEmpty()) {
-                double total = cartManager.getTotal() + tax + 10;
-                Intent intent = new Intent(CartActivity.this, PaymentActivity.class);
-                intent.putExtra("total_amount", total);
-                startActivityForResult(intent, PAYMENT_REQUEST_CODE);
-            } else {
-                Toast.makeText(this, "Your cart is empty", Toast.LENGTH_SHORT).show();
-            }
-        });
-        
+        btnOrderNow.setOnClickListener(v -> processCheckout());
         backBtn.setOnClickListener(v -> finish());
+    }
+
+    private void updateCartUI() {
+        if (cartItems.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            checkoutLayout.setVisibility(View.GONE);
+            emptyCartText.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        recyclerView.setVisibility(View.VISIBLE);
+        checkoutLayout.setVisibility(View.VISIBLE);
+        emptyCartText.setVisibility(View.GONE);
+
+        double subtotal = cartManager.getTotal();
+        double tax = subtotal * TAX_RATE;
+        double total = subtotal + tax + DELIVERY_FEE;
+
+        totalFeeTxt.setText(formatCurrency(subtotal));
+        taxTxt.setText(formatCurrency(tax));
+        deliveryTxt.setText(formatCurrency(DELIVERY_FEE));
+        totalTxt.setText(formatCurrency(total));
+    }
+
+    private String formatCurrency(double amount) {
+        return String.format(Locale.US, "%,.0f₫", amount);
+    }
+
+    private void processCheckout() {
+        if (cartItems.isEmpty()) {
+            Toast.makeText(this, "Giỏ hàng trống", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Hiển thị dialog xác nhận thanh toán
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Xác nhận đặt hàng")
+               .setMessage("Bạn có chắc chắn muốn đặt hàng?")
+               .setPositiveButton("Đặt hàng", (dialog, which) -> {
+                   showPaymentMethodDialog();
+               })
+               .setNegativeButton("Hủy", null)
+               .show();
+    }
+
+    private void showPaymentMethodDialog() {
+        String[] paymentMethods = {"Thanh toán khi nhận hàng (COD)", "Thẻ ngân hàng"};
+        
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chọn phương thức thanh toán")
+               .setItems(paymentMethods, (dialog, which) -> {
+                   switch (which) {
+                       case 0: // COD
+                           processCODPayment();
+                           break;
+                       case 1: // Bank card
+                           startBankCardPayment();
+                           break;
+                   }
+               })
+               .show();
+    }
+
+    private void processCODPayment() {
+        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        SharedPreferences sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
+        String userEmail = sharedPreferences.getString("email", "");
+        double total = cartManager.getTotal() + (cartManager.getTotal() * TAX_RATE) + DELIVERY_FEE;
+
+        long orderId = dbHelper.addOrder(userEmail, total);
+        if (orderId != -1) {
+            // Lưu chi tiết đơn hàng
+            for (CartItem item : cartItems) {
+                dbHelper.addOrderItem(
+                    (int) orderId,                    // order_id 
+                    item.getProduct().getId(),        // product_id
+                    item.getProduct().getName(),      // product_name
+                    item.getQuantity(),               // quantity  
+                    item.getPrice()                   // price
+                );
+            }
+            
+            cartManager.clearCart();
+            showOrderSuccessDialog();
+        } else {
+            Toast.makeText(this, "Có lỗi xảy ra khi đặt hàng", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void startBankCardPayment() {
+        double total = cartManager.getTotal() + (cartManager.getTotal() * TAX_RATE) + DELIVERY_FEE;
+        Intent intent = new Intent(this, PaymentActivity.class);
+        intent.putExtra("total_amount", total);
+        startActivityForResult(intent, PAYMENT_REQUEST_CODE);
+    }
+
+    private void showOrderSuccessDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Đặt hàng thành công")
+            .setMessage("Cảm ơn bạn đã đặt hàng. Chúng tôi sẽ sớm liên hệ với bạn.")
+            .setPositiveButton("OK", (dialog, which) -> {
+                setResult(RESULT_OK);
+                finish();
+            })
+            .setCancelable(false)
+            .show();
     }
 
     @Override
     public void onQuantityChanged() {
-        calculateCart();
+        updateCartUI();
     }
 
     @Override
     public void onItemRemoved(int position) {
-        if (position >= 0 && position < cartItems.size()) {
-            cartManager.removeItem(position);
-            cartItems.remove(position);
-            cartAdapter.notifyItemRemoved(position);
-            calculateCart();
-        }
+        cartManager.removeItem(position);
+        cartAdapter.notifyItemRemoved(position);
+        updateCartUI();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PAYMENT_REQUEST_CODE && resultCode == RESULT_OK) {
-            Toast.makeText(this, "Order placed successfully!", Toast.LENGTH_SHORT).show();
-            cartManager.clearCart();
-            cartItems.clear();
-            cartAdapter.notifyDataSetChanged();
-            calculateCart();
-            finish();
+            showOrderSuccessDialog();
         }
     }
 }

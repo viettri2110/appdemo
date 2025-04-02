@@ -79,6 +79,13 @@
         <activity
             android:name=".Activity.MyReviewsActivity"
             android:exported="false"/>
+        <activity
+            android:name=".Activity.OrderManagementActivity"
+            android:exported="false">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="" />
+        </activity>
 
     </application>
 

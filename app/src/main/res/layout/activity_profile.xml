@@ -312,6 +312,33 @@
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
+            <!-- Thêm vào layout hiện tại -->
+            <LinearLayout
+                android:id="@+id/adminControls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Quản lý hệ thống"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Button
+                    android:id="@+id/btnManageOrders"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Quản lý đơn hàng"
+                    android:drawableStart="@drawable/ic_order"
+                    android:padding="12dp"/>
+
+            </LinearLayout>
+
         </LinearLayout>
     </ScrollView>
 </LinearLayout> 

@@ -30,7 +30,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_USER_EMAIL = "user_email";
     private static final String COLUMN_PRODUCT_ID = "product_id";
-    private static final String COLUMN_ORDER_ID = "order_id";
     
     // Bảng Users
     private static final String TABLE_USERS = "users";
@@ -100,7 +99,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Tạo bảng orders
         String CREATE_ORDERS_TABLE = "CREATE TABLE " + TABLE_ORDERS + "("
-                + COLUMN_ORDER_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + COLUMN_USER_EMAIL + " TEXT NOT NULL,"
                 + COLUMN_TOTAL_AMOUNT + " REAL NOT NULL,"
                 + COLUMN_ORDER_DATE + " DATETIME DEFAULT (datetime('now', 'localtime')),"
@@ -111,13 +110,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
         // Tạo bảng order_items
         String CREATE_ORDER_ITEMS_TABLE = "CREATE TABLE " + TABLE_ORDER_ITEMS + "("
-                + COLUMN_ITEM_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                + COLUMN_ORDER_ID + " INTEGER,"
+                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "order_id INTEGER,"
                 + COLUMN_PRODUCT_ID + " INTEGER,"
                 + COLUMN_PRODUCT_NAME + " TEXT,"
                 + COLUMN_QUANTITY + " INTEGER,"
                 + COLUMN_PRICE + " REAL,"
-                + "FOREIGN KEY(" + COLUMN_ORDER_ID + ") REFERENCES " + TABLE_ORDERS + "(id)"
+                + "FOREIGN KEY(order_id) REFERENCES " + TABLE_ORDERS + "(" + COLUMN_ID + ")"
                 + ")";
         db.execSQL(CREATE_ORDER_ITEMS_TABLE);
 
@@ -450,7 +449,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public long addOrderItem(int orderId, int productId, String productName, int quantity, double price) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put(COLUMN_ORDER_ID, orderId);
+        values.put("order_id", orderId);
         values.put(COLUMN_PRODUCT_ID, productId);
         values.put(COLUMN_PRODUCT_NAME, productName);
         values.put(COLUMN_QUANTITY, quantity);
@@ -465,7 +464,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         
         try {
             String query = "SELECT * FROM " + TABLE_ORDER_ITEMS + 
-                          " WHERE " + COLUMN_ORDER_ID + " = ?";
+                          " WHERE order_id = ?";
             
             Log.d("DatabaseHelper", "Getting items for order: " + orderId);
             Log.d("DatabaseHelper", "Query: " + query);
@@ -477,7 +476,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                 do {
                     OrderItem item = new OrderItem();
                     item.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ITEM_ID)));
-                    item.setOrderId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORDER_ID)));
+                    item.setOrderId(cursor.getInt(cursor.getColumnIndexOrThrow("order_id")));
                     item.setProductId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PRODUCT_ID)));
                     item.setProductName(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_PRODUCT_NAME)));
                     item.setQuantity(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_QUANTITY)));
@@ -846,25 +845,50 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         List<Order> orders = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
 
-        String query = "SELECT o.*, u.name as user_name FROM " + TABLE_ORDERS + " o " +
-                      "JOIN " + TABLE_USERS + " u ON o.user_email = u.email " +
-                      "ORDER BY o.order_date DESC";
+        try {
+            String query = "SELECT o." + COLUMN_ID + ", " +
+                          "o." + COLUMN_USER_EMAIL + ", " +
+                          "o." + COLUMN_ORDER_DATE + ", " +
+                          "o." + COLUMN_TOTAL_AMOUNT + ", " +
+                          "o." + COLUMN_ORDER_STATUS + ", " +
+                          "u." + COLUMN_NAME + " as user_name " +
+                          "FROM " + TABLE_ORDERS + " o " +
+                          "JOIN " + TABLE_USERS + " u ON o." + COLUMN_USER_EMAIL + " = u." + COLUMN_EMAIL + " " +
+                          "ORDER BY o." + COLUMN_ORDER_DATE + " DESC";
 
-        Cursor cursor = db.rawQuery(query, null);
+            Log.d("DatabaseHelper", "Getting all orders");
+            Log.d("DatabaseHelper", "Query: " + query);
 
-        if (cursor.moveToFirst()) {
-            do {
-                Order order = new Order();
-                order.setId(cursor.getInt(cursor.getColumnIndex(COLUMN_ORDER_ID)));
-                order.setUserEmail(cursor.getString(cursor.getColumnIndex(COLUMN_USER_EMAIL)));
-                order.setUserName(cursor.getString(cursor.getColumnIndex("user_name")));
-                order.setOrderDate(cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_DATE)));
-                order.setTotalAmount(cursor.getDouble(cursor.getColumnIndex(COLUMN_TOTAL_AMOUNT)));
-                order.setStatus(cursor.getString(cursor.getColumnIndex(COLUMN_ORDER_STATUS)));
-                orders.add(order);
-            } while (cursor.moveToNext());
+            Cursor cursor = db.rawQuery(query, null);
+            Log.d("DatabaseHelper", "Found " + cursor.getCount() + " orders");
+
+            if (cursor.moveToFirst()) {
+                do {
+                    Order order = new Order();
+                    order.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID)));
+                    order.setUserEmail(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL)));
+                    order.setUserName(cursor.getString(cursor.getColumnIndexOrThrow("user_name")));
+                    order.setOrderDate(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_DATE)));
+                    order.setTotalAmount(cursor.getDouble(cursor.getColumnIndexOrThrow(COLUMN_TOTAL_AMOUNT)));
+                    order.setStatus(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_STATUS)));
+                    orders.add(order);
+
+                    Log.d("DatabaseHelper", String.format(
+                        "Loaded order - ID: %d, User: %s, Date: %s, Status: %s",
+                        order.getId(),
+                        order.getUserName(),
+                        order.getOrderDate(),
+                        order.getStatus()
+                    ));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            Log.e("DatabaseHelper", "Error getting all orders", e);
+            e.printStackTrace();
         }
-        cursor.close();
+
+        Log.d("DatabaseHelper", "Returning " + orders.size() + " orders");
         return orders;
     }
 
@@ -876,7 +900,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         
         int result = db.update(TABLE_ORDERS, 
             values, 
-            COLUMN_ORDER_ID + " = ?",
+            COLUMN_ID + " = ?",
             new String[]{String.valueOf(orderId)});
         
         return result > 0;
@@ -887,7 +911,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         Order order = null;
 
         try {
-            String query = "SELECT o." + COLUMN_ORDER_ID + ", " +
+            String query = "SELECT o." + COLUMN_ID + ", " +
                           "o." + COLUMN_USER_EMAIL + ", " +
                           "o." + COLUMN_ORDER_DATE + ", " +
                           "o." + COLUMN_TOTAL_AMOUNT + ", " +
@@ -895,13 +919,13 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                           "u." + COLUMN_NAME + " as user_name " +
                           "FROM " + TABLE_ORDERS + " o " +
                           "JOIN " + TABLE_USERS + " u ON o." + COLUMN_USER_EMAIL + " = u." + COLUMN_EMAIL + " " +
-                          "WHERE o." + COLUMN_ORDER_ID + " = ?";
+                          "WHERE o." + COLUMN_ID + " = ?";
 
             Cursor cursor = db.rawQuery(query, new String[]{String.valueOf(orderId)});
 
             if (cursor.moveToFirst()) {
                 order = new Order();
-                order.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORDER_ID)));
+                order.setId(cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ID)));
                 order.setUserEmail(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_USER_EMAIL)));
                 order.setUserName(cursor.getString(cursor.getColumnIndexOrThrow("user_name")));
                 order.setOrderDate(cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_ORDER_DATE)));

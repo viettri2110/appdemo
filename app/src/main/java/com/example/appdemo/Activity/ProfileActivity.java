@@ -34,6 +34,7 @@ public class ProfileActivity extends AppCompatActivity {
     private DatabaseHelper dbHelper;
     private Button btnEditProfile;
     private RecentOrdersAdapter recentOrdersAdapter;
+    private LinearLayout adminControls;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +47,7 @@ public class ProfileActivity extends AppCompatActivity {
         initViews();
         setupListeners();
         loadUserData();
+        checkAdminRights();
         setupRecentOrders();
 
         ImageButton btnBack = findViewById(R.id.btnBack);
@@ -64,6 +66,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnViewAllOrders = findViewById(R.id.btnViewAllOrders);
         recyclerRecentOrders = findViewById(R.id.recyclerRecentOrders);
         btnEditProfile = findViewById(R.id.btnEditProfile);
+        adminControls = findViewById(R.id.adminControls);
 
         sharedPreferences = getSharedPreferences("UserPrefs", MODE_PRIVATE);
     }
@@ -179,10 +182,28 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
+    private void checkAdminRights() {
+        boolean isAdmin = sharedPreferences.getBoolean("isAdmin", false);
+        
+        if (isAdmin) {
+            // Hiển thị phần quản lý cho admin
+            adminControls.setVisibility(View.VISIBLE);
+            
+            // Thêm listener cho nút quản lý đơn hàng
+            findViewById(R.id.btnManageOrders).setOnClickListener(v -> {
+                Intent intent = new Intent(this, OrderManagementActivity.class);
+                startActivity(intent);
+            });
+        } else {
+            adminControls.setVisibility(View.GONE);
+        }
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
         loadUserData();
+        checkAdminRights();
         setupRecentOrders(); // Chỉ cập nhật đơn hàng
     }
 } 

@@ -7,6 +7,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +41,9 @@ public class PaymentActivity extends AppCompatActivity {
         // Lấy và hiển thị tổng tiền
         totalAmount = getIntent().getDoubleExtra("total_amount", 0);
         txtTotal.setText(formatCurrency(totalAmount));
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
     }
 
     private void initViews() {

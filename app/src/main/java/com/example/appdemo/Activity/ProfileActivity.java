@@ -18,6 +18,7 @@ import com.example.appdemo.R;
 import com.example.appdemo.Adapter.RecentOrdersAdapter;
 import com.example.appdemo.Model.Order;
 import android.database.sqlite.SQLiteException;
+import android.widget.ImageButton;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -46,6 +47,9 @@ public class ProfileActivity extends AppCompatActivity {
         setupListeners();
         loadUserData();
         setupRecentOrders();
+
+        ImageButton btnBack = findViewById(R.id.btnBack);
+        btnBack.setOnClickListener(v -> finish());
     }
 
     private void initViews() {
